@@ -1,0 +1,30 @@
+export default function Footer() {
+  return (
+    <footer className="border-t mt-16">
+      <div className="container py-10 grid gap-6 sm:grid-cols-3">
+        <div>
+          <div className="font-hand text-2xl text-accent">Rangista</div>
+          <p className="mt-2 text-sm text-muted-foreground max-w-sm">
+            Rangista — where every outfit is a piece of art, made just for your little one. Hand-painted with love, crafted with care, and designed to make every moment magical. 🎨💖
+          </p>
+        </div>
+        <div>
+          <div className="font-medium mb-2">Contact</div>
+          <ul className="space-y-1 text-sm">
+            <li>WhatsApp: <a className="underline" href="https://wa.me/923340677883" target="_blank" rel="noreferrer">03340677883</a></li>
+            <li>Email: <a className="underline" href="mailto:rangistaarttowear@gmail.com">rangistaarttowear@gmail.com</a></li>
+          </ul>
+        </div>
+        <div>
+          <div className="font-medium mb-2">Social</div>
+          <ul className="space-y-1 text-sm">
+            <li><a className="underline" href="https://www.facebook.com/profile.php?id=100065230491278" target="_blank" rel="noreferrer">Facebook</a></li>
+            <li><a className="underline" href="https://www.instagram.com/_rangista/" target="_blank" rel="noreferrer">Instagram</a></li>
+            <li><a className="underline" href="https://pin.it/6NW4U2K" target="_blank" rel="noreferrer">Pinterest</a></li>
+          </ul>
+        </div>
+      </div>
+      <div className="py-4 text-center text-xs text-muted-foreground">© {new Date().getFullYear()} Rangista. All rights reserved.</div>
+    </footer>
+  );
+}

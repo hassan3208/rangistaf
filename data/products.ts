@@ -214,6 +214,9 @@ export type Product = {
   image: string;
   images?: string[];
   collection: "✨ Bestsellers Edit" | "🌸 New Arrivals" | "❄ Winter Wonders" | "☀ Summer Bloom" | "💍 The Wedding Season" | "🌙 Eid Collection" | "🐐 Bakra Eid Edit" | "Azadi Collection" | "👩‍🍼 Mommy & Me" | "👗 Adults Collection" | "🎨 Handpainted Dupattas Collection";
+  category: string;          // ⭐ NEW
+  discount: number;          // ⭐ NEW
+  colors: string[];          // ⭐ NEW
   description?: string;
   total_reviews: number;
   average_rating: number;

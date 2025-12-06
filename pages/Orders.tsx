@@ -1,364 +1,4 @@
-// // import { FormEvent, useMemo, useState, useEffect } from "react";
-// // import { useAuth } from "@/context/AuthContext";
-// // import { formatPKR } from "@/lib/currency";
-// // import { Button } from "@/components/ui/button";
-// // import { API_BASE_URL } from "@/lib/api-config";
-// // import {
-// //   Dialog,
-// //   DialogContent,
-// //   DialogDescription,
-// //   DialogFooter,
-// //   DialogHeader,
-// //   DialogTitle,
-// // } from "@/components/ui/dialog";
-// // import { Textarea } from "@/components/ui/textarea";
-// // import { Star } from "lucide-react";
-// // import { cn } from "@/lib/utils";
-
-// // interface ReviewTarget {
-// //   orderId: number;
-// //   productId: string;
-// //   productName: string;
-// //   size?: string;
-// // }
-
-// // interface OrderItem {
-// //   product_id: string;
-// //   product_name: string;
-// //   quantity: number;
-// //   size?: string;
-// //   price: number;
-// // }
-
-// // interface Order {
-// //   order_id: number;
-// //   user_id: number;
-// //   username: string;
-// //   status: string;
-// //   total_products: number;
-// //   total_price: number;
-// //   products: OrderItem[];
-// //   order_time: string;
-// // }
-
-// // export default function Orders() {
-// //   const { user } = useAuth();
-// //   const [dialogOpen, setDialogOpen] = useState(false);
-// //   const [activeTarget, setActiveTarget] = useState<ReviewTarget | null>(null);
-// //   const [rating, setRating] = useState(5);
-// //   const [comment, setComment] = useState("");
-// //   const [orders, setOrders] = useState<Order[]>([]);
-// //   const [loading, setLoading] = useState(true);
-// //   const [refreshToken, setRefreshToken] = useState(0);
-// //   const [reviewStatus, setReviewStatus] = useState<{ [key: string]: boolean }>({});
-
-// //   // Map statuses to badge and border styles
-// //   const STATUS_STYLES: Record<string, { badge: string; border: string; card?: string }> = {
-// //     pending: { badge: "bg-yellow-100 text-yellow-800", border: "border-yellow-300", card: "bg-yellow-50" },
-// //     processing: { badge: "bg-blue-100 text-blue-800", border: "border-blue-300", card: "bg-blue-50" },
-// //     shipped: { badge: "bg-indigo-100 text-indigo-800", border: "border-indigo-300", card: "bg-indigo-50" },
-// //     delivered: { badge: "bg-green-100 text-green-800", border: "border-green-300", card: "bg-green-50" },
-// //     canceled: { badge: "bg-red-100 text-red-800", border: "border-red-300", card: "bg-red-50" },
-// //   };
-
-// //   useEffect(() => {
-// //     if (!user?.id) {
-// //       setLoading(false);
-// //       return;
-// //     }
-
-// //     async function fetchOrders() {
-// //       try {
-// //         setLoading(true);
-// //         const userId = parseInt(user.id, 10);
-// //         if (isNaN(userId)) {
-// //           console.error("Invalid user ID:", user.id);
-// //           setOrders([]);
-// //           return;
-// //         }
-// //         const response = await fetch(`${API_BASE_URL}/users/${userId}/orders`);
-// //         if (!response.ok) {
-// //           if (response.status === 404) {
-// //             setOrders([]);
-// //             return;
-// //           }
-// //           throw new Error(`Failed to fetch orders: ${response.statusText}`);
-// //         }
-// //         const data: Order[] = await response.json();
-// //         setOrders(data);
-
-// //         const statusMap: { [key: string]: boolean } = {};
-// //         for (const order of data) {
-// //           for (const item of order.products) {
-// //             const key = `${order.order_id}-${item.product_id}-${item.size ?? ""}`;
-// //             const reviewed = await hasReviewForOrderItem({
-// //               userId,
-// //               orderId: order.order_id,
-// //               productId: item.product_id,
-// //               size: item.size,
-// //             });
-// //             statusMap[key] = reviewed;
-// //           }
-// //         }
-// //         setReviewStatus(statusMap);
-// //       } catch (error) {
-// //         console.error("Failed to fetch orders:", error);
-// //         setOrders([]);
-// //       } finally {
-// //         setLoading(false);
-// //       }
-// //     }
-
-// //     fetchOrders();
-// //   }, [user?.id, refreshToken]);
-
-// //   const openReviewDialog = (target: ReviewTarget) => {
-// //     setActiveTarget(target);
-// //     setRating(5);
-// //     setComment("");
-// //     setDialogOpen(true);
-// //   };
-
-// //   const closeDialog = () => {
-// //     setDialogOpen(false);
-// //     setActiveTarget(null);
-// //     setComment("");
-// //   };
-
-// //   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-// //     event.preventDefault();
-// //     if (!activeTarget || !user) return;
-
-// //     const userId = parseInt(user.id, 10);
-// //     if (isNaN(userId)) {
-// //       console.error("Invalid user ID:", user.id);
-// //       alert("Invalid user ID. Please try again.");
-// //       return;
-// //     }
-
-// //     const reviewData = {
-// //       user_id: userId,
-// //       product_id: activeTarget.productId,
-// //       stars: rating,
-// //       text: comment || undefined,
-// //       time: new Date().toISOString().split('T')[0],
-// //     };
-
-// //     try {
-// //       const response = await fetch(`${API_BASE_URL}/reviews/`, {
-// //         method: "POST",
-// //         headers: {
-// //           "Content-Type": "application/json",
-// //         },
-// //         body: JSON.stringify(reviewData),
-// //       });
-// //       if (!response.ok) {
-// //         throw new Error(`Failed to create review: ${response.statusText}`);
-// //       }
-// //       const key = `${activeTarget.orderId}-${activeTarget.productId}-${activeTarget.size ?? ""}`;
-// //       setReviewStatus((prev) => ({ ...prev, [key]: true }));
-// //       setRefreshToken((prev) => prev + 1);
-// //       closeDialog();
-// //     } catch (error) {
-// //       console.error("Failed to create review:", error);
-// //       alert("Failed to submit review. Please try again.");
-// //     }
-// //   };
-
-// //   const hasReviewForOrderItem = async (params: {
-// //     userId: number;
-// //     orderId: number;
-// //     productId: string;
-// //     size?: string;
-// //   }) => {
-// //     try {
-// //       const response = await fetch(
-// //         `${API_BASE_URL}/reviews/check?user_id=${params.userId}&order_id=${params.orderId}&product_id=${params.productId}${params.size ? `&size=${params.size}` : ""}`
-// //       );
-// //       if (!response.ok) {
-// //         return false;
-// //       }
-// //       const data = await response.json();
-// //       return data.reviewed;
-// //     } catch (error) {
-// //       console.error("Error checking review:", error);
-// //       return false;
-// //     }
-// //   };
-
-// //   if (!user) return <div className="container py-10">Please login to view your orders.</div>;
-// //   if (loading) return <div className="container py-10">Loading orders...</div>;
-
-// //   return (
-// //     <main className="container py-10">
-// //       <h1 className="font-serif text-3xl">My Orders</h1>
-// //       {orders.length === 0 ? (
-// //         <p className="mt-4 text-muted-foreground">No orders yet.</p>
-// //       ) : (
-// //         <div className="mt-6 space-y-4">
-// //           {orders.map((o) => (
-// //             <div
-// //               key={o.order_id}
-// //               className={`border rounded-lg p-4 space-y-3 ${STATUS_STYLES[o.status]?.border ?? "border-gray-200"} ${STATUS_STYLES[o.status]?.card ?? ""}`}
-// //             >
-// //               <div className="flex items-center justify-between gap-4">
-// //                 {/* Left: order info */}
-// //                 <div className="flex flex-col">
-// //                   <span className="text-sm font-medium">Order #{o.order_id}</span>
-// //                   <span className="text-xs text-muted-foreground">{o.order_time}</span>
-// //                   {o.status === "pending" ? (
-// //                     <span className="text-xs text-muted-foreground">Total: {formatPKR(o.total_price)}</span>
-// //                   ) : o.status === "canceled" ? (
-// //                     <span className="text-xs text-muted-foreground">Canceled (Original Total: {formatPKR(o.total_price)})</span>
-// //                   ) : o.status === "delivered" ? (
-// //                     <span className="text-xs text-muted-foreground">Paid: {formatPKR(o.total_price)}</span>
-// //                   ) : (
-// //                     <span className="text-xs text-muted-foreground">
-// //                       Paid: {formatPKR(o.total_price * 0.5)} | Remaining: {formatPKR(o.total_price * 0.5)}
-// //                     </span>
-// //                   )}
-// //                 </div>
-
-// //                 {/* Right: dominant status pill */}
-// //                 <div className="flex items-center">
-// //                   <span
-// //                     className={`inline-flex items-center justify-center px-4 py-2 rounded-full text-sm font-semibold ${STATUS_STYLES[o.status]?.badge ?? "bg-gray-100 text-gray-800"}`}
-// //                   >
-// //                     {o.status.replace("_", " ")}
-// //                   </span>
-// //                 </div>
-// //               </div>
-// //               <ul className="space-y-2">
-// //                 {o.products.map((item) => {
-// //                   const key = `${o.order_id}-${item.product_id}-${item.size ?? ""}`;
-// //                   const reviewed = reviewStatus[key] ?? false;
-
-// //                   return (
-// //                     <li
-// //                       key={`${item.product_id}-${item.size ?? ""}`}
-// //                       className="flex flex-col gap-1 rounded-md border border-dashed p-3 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between md:gap-3"
-// //                     >
-// //                       <span>
-// //                         {item.product_name} {item.size ? `(${item.size})` : ""} × {item.quantity} —{" "}
-// //                         {formatPKR(item.price)}
-// //                       </span>
-// //                       {reviewed ? (
-// //                         <Button variant="secondary" size="sm" disabled>
-// //                           Review submitted
-// //                         </Button>
-// //                       ) : (
-// //                         <Button
-// //                           size="sm"
-// //                           onClick={() =>
-// //                             openReviewDialog({
-// //                               orderId: o.order_id,
-// //                               productId: item.product_id,
-// //                               productName: item.product_name,
-// //                               size: item.size,
-// //                             })
-// //                           }
-// //                         >
-// //                           Give Review
-// //                         </Button>
-// //                       )}
-// //                     </li>
-// //                   );
-// //                 })}
-// //               </ul>
-// //             </div>
-// //           ))}
-// //         </div>
-// //       )}
-
-// //       <Dialog
-// //         open={dialogOpen}
-// //         onOpenChange={(open) => {
-// //           if (open) {
-// //             setDialogOpen(true);
-// //           } else {
-// //             closeDialog();
-// //           }
-// //         }}
-// //       >
-// //         <DialogContent>
-// //           <form onSubmit={handleSubmit} className="space-y-6">
-// //             <DialogHeader>
-// //               <DialogTitle>Review {activeTarget?.productName}</DialogTitle>
-// //               <DialogDescription>Share your experience to help others.</DialogDescription>
-// //             </DialogHeader>
-
-// //             <div className="space-y-2">
-// //               <span className="text-sm font-medium">Rating</span>
-// //               <div className="flex gap-2">
-// //                 {Array.from({ length: 5 }).map((_, index) => {
-// //                   const value = index + 1;
-// //                   const active = value <= rating;
-// //                   return (
-// //                     <button
-// //                       key={value}
-// //                       type="button"
-// //                       onClick={() => setRating(value)}
-// //                       className={cn(
-// //                         "rounded-full border px-3 py-2 transition",
-// //                         active
-// //                           ? "border-accent bg-accent text-accent-foreground"
-// //                           : "border-input bg-background text-muted-foreground hover:border-accent hover:text-foreground"
-// //                       )}
-// //                     >
-// //                       <Star className={cn("h-4 w-4", active ? "fill-current" : "")} />
-// //                     </button>
-// //                   );
-// //                 })}
-// //               </div>
-// //             </div>
-
-// //             <div className="space-y-2">
-// //               <label htmlFor="review-comment" className="text-sm font-medium">
-// //                 Description (optional)
-// //               </label>
-// //               <Textarea
-// //                 id="review-comment"
-// //                 value={comment}
-// //                 onChange={(event) => setComment(event.target.value)}
-// //                 placeholder="Share any thoughts you have about this product."
-// //               />
-// //             </div>
-
-// //             <DialogFooter>
-// //               <Button type="button" variant="outline" onClick={closeDialog}>
-// //                 Cancel
-// //               </Button>
-// //               <Button type="submit">Submit Review</Button>
-// //             </DialogFooter>
-// //           </form>
-// //         </DialogContent>
-// //       </Dialog>
-// //     </main>
-// //   );
-// // }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import { FormEvent, useMemo, useState, useEffect } from "react";
+// import { FormEvent, useState, useEffect } from "react";
 // import { useAuth } from "@/context/AuthContext";
 // import { formatPKR } from "@/lib/currency";
 // import { getDiscountForCollection, applyDiscount } from "@/data/discount";
@@ -377,6 +17,33 @@
 // import { Star } from "lucide-react";
 // import { cn } from "@/lib/utils";
 
+
+// //
+// // Supabase Session Helpers
+// //
+// function getSupabaseSession() {
+//   const key = Object.keys(localStorage).find((k) => k.includes("-auth-token"));
+//   if (!key) return null;
+//   try {
+//     return JSON.parse(localStorage.getItem(key) || "{}");
+//   } catch {
+//     return null;
+//   }
+// }
+
+// function getAccessToken() {
+//   return getSupabaseSession()?.access_token || null;
+// }
+
+// function getUserId() {
+//   return getSupabaseSession()?.user?.id || null;
+// }
+
+
+
+// //
+// // TYPES
+// //
 // interface ReviewTarget {
 //   orderId: number;
 //   productId: string;
@@ -390,11 +57,13 @@
 //   quantity: number;
 //   size?: string;
 //   price: number;
+//   discount: number;
+//   color?: string | null;
 // }
 
 // interface Order {
 //   order_id: number;
-//   user_id: number;
+//   user_id: string;
 //   username: string;
 //   status: string;
 //   total_products: number;
@@ -403,6 +72,11 @@
 //   order_time: string;
 // }
 
+
+
+// //
+// // MAIN COMPONENT
+// //
 // export default function Orders() {
 //   const { user } = useAuth();
 //   const [dialogOpen, setDialogOpen] = useState(false);
@@ -414,7 +88,6 @@
 //   const [refreshToken, setRefreshToken] = useState(0);
 //   const [reviewStatus, setReviewStatus] = useState<{ [key: string]: boolean }>({});
 
-//   // Map statuses to badge and border styles
 //   const STATUS_STYLES: Record<string, { badge: string; border: string; card?: string }> = {
 //     pending: { badge: "bg-yellow-100 text-yellow-800", border: "border-yellow-300", card: "bg-yellow-50" },
 //     processing: { badge: "bg-blue-100 text-blue-800", border: "border-blue-300", card: "bg-blue-50" },
@@ -423,221 +96,265 @@
 //     canceled: { badge: "bg-red-100 text-red-800", border: "border-red-300", card: "bg-red-50" },
 //   };
 
-//   useEffect(() => {
-//     if (!user?.id) {
-//       setLoading(false);
-//       return;
-//     }
 
-//     async function fetchOrders() {
+//   //
+//   // FETCH ORDERS
+//   //
+//   useEffect(() => {
+//     const uid = getUserId();
+//     const token = getAccessToken();
+
+//     async function loadOrders() {
 //       try {
-//         setLoading(true);
-//         const userId = parseInt(user.id, 10);
-//         if (isNaN(userId)) {
-//           console.error("Invalid user ID:", user.id);
+//         if (!uid || !token) {
 //           setOrders([]);
+//           setLoading(false);
 //           return;
 //         }
-//         const response = await fetch(`${API_BASE_URL}/users/${userId}/orders`);
+
+//         const response = await fetch(`${API_BASE_URL}/users/${uid}/orders`, {
+//           headers: {
+//             Authorization: `Bearer ${token}`,
+//           },
+//         });
+
 //         if (!response.ok) {
 //           if (response.status === 404) {
 //             setOrders([]);
 //             return;
 //           }
-//           throw new Error(`Failed to fetch orders: ${response.statusText}`);
+//           throw new Error(`Failed to load orders`);
 //         }
+
 //         const data: Order[] = await response.json();
 //         setOrders(data);
 
-//         const statusMap: { [key: string]: boolean } = {};
+//         // Fetch review status
+//         const map: any = {};
 //         for (const order of data) {
 //           for (const item of order.products) {
 //             const key = `${order.order_id}-${item.product_id}-${item.size ?? ""}`;
-//             const reviewed = await hasReviewForOrderItem({
-//               userId,
-//               orderId: order.order_id,
-//               productId: item.product_id,
-//               size: item.size,
-//             });
-//             statusMap[key] = reviewed;
+//             map[key] = await hasReviewForItem(uid, order.order_id, item.product_id, item.size);
 //           }
 //         }
-//         setReviewStatus(statusMap);
-//       } catch (error) {
-//         console.error("Failed to fetch orders:", error);
+//         setReviewStatus(map);
+
+//       } catch (err) {
+//         console.error(err);
 //         setOrders([]);
 //       } finally {
 //         setLoading(false);
 //       }
 //     }
 
-//     fetchOrders();
-//   }, [user?.id, refreshToken]);
+//     loadOrders();
+//   }, [refreshToken]);
 
-//   const openReviewDialog = (target: ReviewTarget) => {
+
+
+//   //
+//   // CHECK REVIEW
+//   //
+//   async function hasReviewForItem(
+//     uid: string,
+//     orderId: number,
+//     productId: string,
+//     size?: string
+//   ) {
+//     try {
+//       const token = getAccessToken();
+//       const res = await fetch(
+//         `${API_BASE_URL}/reviews/check?user_id=${uid}&order_id=${orderId}&product_id=${productId}${size ? `&size=${size}` : ""}`,
+//         {
+//           headers: { Authorization: `Bearer ${token}` },
+//         }
+//       );
+//       if (!res.ok) return false;
+//       const data = await res.json();
+//       return data.reviewed;
+//     } catch {
+//       return false;
+//     }
+//   }
+
+
+
+//   //
+//   // OPEN DIALOG
+//   //
+//   function openDialog(target: ReviewTarget) {
 //     setActiveTarget(target);
 //     setRating(5);
 //     setComment("");
 //     setDialogOpen(true);
-//   };
+//   }
 
-//   const closeDialog = () => {
+//   function closeDialog() {
 //     setDialogOpen(false);
 //     setActiveTarget(null);
-//     setComment("");
-//   };
+//   }
 
-//   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-//     event.preventDefault();
-//     if (!activeTarget || !user) return;
 
-//     const userId = parseInt(user.id, 10);
-//     if (isNaN(userId)) {
-//       console.error("Invalid user ID:", user.id);
-//       alert("Invalid user ID. Please try again.");
-//       return;
-//     }
+
+//   //
+//   // SUBMIT REVIEW
+//   //
+//   async function handleSubmit(e: FormEvent) {
+//     e.preventDefault();
+
+//     if (!activeTarget) return;
+
+//     const uid = getUserId();
+//     const token = getAccessToken();
 
 //     const reviewData = {
-//       user_id: userId,
+//       user_id: uid,
 //       product_id: activeTarget.productId,
 //       stars: rating,
-//       text: comment || undefined,
-//       time: new Date().toISOString().split('T')[0],
+//       text: comment || "",
+//       time: new Date().toISOString(),
 //     };
 
 //     try {
-//       const response = await fetch(`${API_BASE_URL}/reviews/`, {
+//       const res = await fetch(`${API_BASE_URL}/reviews/`, {
 //         method: "POST",
 //         headers: {
 //           "Content-Type": "application/json",
+//           Authorization: `Bearer ${token}`,
 //         },
 //         body: JSON.stringify(reviewData),
 //       });
-//       if (!response.ok) {
-//         throw new Error(`Failed to create review: ${response.statusText}`);
+
+//       if (!res.ok) {
+//         console.error(await res.text());
+//         throw new Error("Failed to submit review");
 //       }
+
 //       const key = `${activeTarget.orderId}-${activeTarget.productId}-${activeTarget.size ?? ""}`;
 //       setReviewStatus((prev) => ({ ...prev, [key]: true }));
-//       setRefreshToken((prev) => prev + 1);
+
+//       setRefreshToken((p) => p + 1);
 //       closeDialog();
-//     } catch (error) {
-//       console.error("Failed to create review:", error);
-//       alert("Failed to submit review. Please try again.");
+//     } catch (err) {
+//       console.error(err);
+//       alert("Failed to submit review.");
 //     }
-//   };
+//   }
 
-//   const hasReviewForOrderItem = async (params: {
-//     userId: number;
-//     orderId: number;
-//     productId: string;
-//     size?: string;
-//   }) => {
-//     try {
-//       const response = await fetch(
-//         `${API_BASE_URL}/reviews/check?user_id=${params.userId}&order_id=${params.orderId}&product_id=${params.productId}${params.size ? `&size=${params.size}` : ""}`
-//       );
-//       if (!response.ok) {
-//         return false;
-//       }
-//       const data = await response.json();
-//       return data.reviewed;
-//     } catch (error) {
-//       console.error("Error checking review:", error);
-//       return false;
-//     }
-//   };
 
+
+//   //
+//   // RENDER
+//   //
 //   if (!user) return <div className="container py-10">Please login to view your orders.</div>;
 //   if (loading) return <div className="container py-10">Loading orders...</div>;
 
 //   return (
 //     <main className="container py-10">
 //       <h1 className="font-serif text-3xl">My Orders</h1>
+
 //       {orders.length === 0 ? (
 //         <p className="mt-4 text-muted-foreground">No orders yet.</p>
 //       ) : (
-//         <div className="mt-6 space-y-4">
+//         <div className="mt-6 space-y-5">
 //           {orders.map((o) => (
 //             <div
 //               key={o.order_id}
-//               className={`border rounded-lg p-4 space-y-3 ${STATUS_STYLES[o.status]?.border ?? "border-gray-200"} ${STATUS_STYLES[o.status]?.card ?? ""}`}
+//               className={`border rounded-lg p-4 space-y-4 ${STATUS_STYLES[o.status]?.card ?? ""}`}
 //             >
-//               <div className="flex items-center justify-between gap-4">
-//                 {/* Left: order info */}
-//                 <div className="flex flex-col">
-//                   <span className="text-sm font-medium">Order #{o.order_id}</span>
-//                   <span className="text-xs text-muted-foreground">{o.order_time}</span>
-//                   {(() => {
-//                     // Recompute displayed total using discounts when possible
-//                     const computedTotal = o.products.reduce((s, item) => {
-//                       const qty = item.quantity || 1;
-//                       const prod = getProduct(String(item.product_id));
-//                       const pct = prod ? getDiscountForCollection(prod.collection) : 0;
-//                       const unit = qty > 0 ? Number(item.price) / qty : Number(item.price);
-//                       const discountedUnit = applyDiscount(unit, pct);
-//                       const line = Math.round(discountedUnit * qty);
-//                       return s + line;
-//                     }, 0);
-
-//                     if (o.status === "pending") {
-//                       return <span className="text-xs text-muted-foreground">Total: {formatPKR(computedTotal)}</span>;
-//                     }
-
-//                     if (o.status === "canceled") {
-//                       return <span className="text-xs text-muted-foreground">Canceled (Original Total: {formatPKR(o.total_price)})</span>;
-//                     }
-
-//                     if (o.status === "delivered") {
-//                       return <span className="text-xs text-muted-foreground">Paid: {formatPKR(computedTotal)}</span>;
-//                     }
-
-//                     return (
-//                       <span className="text-xs text-muted-foreground">Paid: {formatPKR(Math.round(computedTotal * 0.5))} | Remaining: {formatPKR(Math.round(computedTotal * 0.5))}</span>
-//                     );
-//                   })()}
+//               {/* HEADER */}
+//               <div className="flex items-center justify-between">
+//                 <div>
+//                   <p className="font-semibold">Order #{o.order_id}</p>
+//                   <p className="text-xs text-muted-foreground">
+//                     {new Date(o.order_time).toLocaleString()}
+//                   </p>
 //                 </div>
 
-//                 {/* Right: dominant status pill */}
-//                 <div className="flex items-center">
-//                   <span
-//                     className={`inline-flex items-center justify-center px-4 py-2 rounded-full text-sm font-semibold ${STATUS_STYLES[o.status]?.badge ?? "bg-gray-100 text-gray-800"}`}
-//                   >
-//                     {o.status.replace("_", " ")}
-//                   </span>
-//                 </div>
+//                 <span
+//                   className={`px-3 py-1 rounded-full text-sm font-semibold ${STATUS_STYLES[o.status]?.badge}`}
+//                 >
+//                   {o.status}
+//                 </span>
 //               </div>
-//               <ul className="space-y-2">
-//                 {o.products.map((item) => {
-//                   const key = `${o.order_id}-${item.product_id}-${item.size ?? ""}`;
-//                   const reviewed = reviewStatus[key] ?? false;
 
-//                   // Compute discounted line price when possible
+//               {/* PRODUCT LIST */}
+//               <ul className="space-y-3">
+//                 {o.products.map((item) => {
+//                   const prod = getProduct(item.product_id);
+
 //                   const qty = item.quantity || 1;
-//                   const prod = getProduct(String(item.product_id));
-//                   const pct = prod ? getDiscountForCollection(prod.collection) : 0;
-//                   const unit = qty > 0 ? Number(item.price) / qty : Number(item.price);
-//                   const discountedUnit = applyDiscount(unit, pct);
-//                   const linePrice = Math.round(discountedUnit * qty);
+//                   // Backend already gives line price, so backend unit price:
+//                   const backendUnit = Number(item.price) / qty;
+                  
+//                   // Use backend discount (percentage)
+//                   const pct = item.discount || 0;
+                  
+//                   // Apply discount
+//                   const discountedUnit = applyDiscount(backendUnit, pct);
+                  
+//                   // Final line price
+//                   const line = Math.round(discountedUnit * qty);
+
+
+//                   const key = `${o.order_id}-${item.product_id}-${item.size ?? ""}`;
+//                   const reviewed = reviewStatus[key];
 
 //                   return (
 //                     <li
 //                       key={`${item.product_id}-${item.size ?? ""}`}
-//                       className="flex flex-col gap-1 rounded-md border border-dashed p-3 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between md:gap-3"
+//                       className="flex flex-col md:flex-row items-start md:items-center justify-between border p-3 rounded-md"
 //                     >
-//                       <span>
-//                         {item.product_name} {item.size ? `(${item.size})` : ""} × {item.quantity} — {formatPKR(linePrice)}
-//                         {pct > 0 && <span className="ml-2 text-xs text-muted-foreground line-through">{formatPKR(Number(item.price))}</span>}
-//                       </span>
+//                       <div className="flex gap-3">
+//                         {/* IMAGE */}
+//                         <img
+//                           src={prod?.image || "/placeholder.svg"}
+//                           className="w-16 h-16 rounded-md border object-cover"
+//                         />
+
+//                         <div>
+//                           <p className="font-medium">{item.product_name}</p>
+
+//                           {prod?.collection && (
+//                             <p className="text-xs text-muted-foreground">
+//                               Collection: {prod.collection}
+//                             </p>
+//                           )}
+
+
+//                           {item.color && (
+//                             <p className="text-xs text-muted-foreground">
+//                               Color: {item.color}
+//                             </p>
+//                           )}
+
+//                           <p className="text-xs">
+//                             {item.size ? `Size: ${item.size} — ` : ""}
+//                             Qty: {item.quantity}
+//                           </p>
+
+//                           <p className="text-xs font-semibold">
+//                             {formatPKR(discountedUnit)} × {item.quantity} = {formatPKR(line)}
+//                           </p>
+                          
+//                           {pct > 0 && (
+//                             <p className="text-xs line-through text-muted-foreground">
+//                               {formatPKR(backendUnit)}
+//                             </p>
+//                           )}
+
+//                         </div>
+//                       </div>
+
 //                       {reviewed ? (
-//                         <Button variant="secondary" size="sm" disabled>
+//                         <Button variant="secondary" disabled size="sm">
 //                           Review submitted
 //                         </Button>
 //                       ) : (
 //                         <Button
 //                           size="sm"
 //                           onClick={() =>
-//                             openReviewDialog({
+//                             openDialog({
 //                               orderId: o.order_id,
 //                               productId: item.product_id,
 //                               productName: item.product_name,
@@ -657,57 +374,45 @@
 //         </div>
 //       )}
 
-//       <Dialog
-//         open={dialogOpen}
-//         onOpenChange={(open) => {
-//           if (open) {
-//             setDialogOpen(true);
-//           } else {
-//             closeDialog();
-//           }
-//         }}
-//       >
+//       {/* REVIEW DIALOG */}
+//       <Dialog open={dialogOpen} onOpenChange={(v) => (v ? setDialogOpen(true) : closeDialog())}>
 //         <DialogContent>
 //           <form onSubmit={handleSubmit} className="space-y-6">
 //             <DialogHeader>
 //               <DialogTitle>Review {activeTarget?.productName}</DialogTitle>
-//               <DialogDescription>Share your experience to help others.</DialogDescription>
+//               <DialogDescription>Share your experience.</DialogDescription>
 //             </DialogHeader>
 
-//             <div className="space-y-2">
-//               <span className="text-sm font-medium">Rating</span>
-//               <div className="flex gap-2">
-//                 {Array.from({ length: 5 }).map((_, index) => {
-//                   const value = index + 1;
-//                   const active = value <= rating;
+//             {/* RATING */}
+//             <div>
+//               <p className="text-sm font-medium mb-1">Rating</p>
+//               <div className="flex gap-1">
+//                 {Array.from({ length: 5 }).map((_, idx) => {
+//                   const val = idx + 1;
 //                   return (
 //                     <button
-//                       key={value}
+//                       key={val}
 //                       type="button"
-//                       onClick={() => setRating(value)}
+//                       onClick={() => setRating(val)}
 //                       className={cn(
-//                         "rounded-full border px-3 py-2 transition",
-//                         active
-//                           ? "border-accent bg-accent text-accent-foreground"
-//                           : "border-input bg-background text-muted-foreground hover:border-accent hover:text-foreground"
+//                         "p-2 rounded-md border",
+//                         val <= rating ? "bg-yellow-400 text-white" : ""
 //                       )}
 //                     >
-//                       <Star className={cn("h-4 w-4", active ? "fill-current" : "")} />
+//                       <Star className="w-4 h-4" />
 //                     </button>
 //                   );
 //                 })}
 //               </div>
 //             </div>
 
-//             <div className="space-y-2">
-//               <label htmlFor="review-comment" className="text-sm font-medium">
-//                 Description (optional)
-//               </label>
+//             {/* COMMENT */}
+//             <div className="space-y-1">
+//               <p className="text-sm font-medium">Description (optional)</p>
 //               <Textarea
-//                 id="review-comment"
 //                 value={comment}
-//                 onChange={(event) => setComment(event.target.value)}
-//                 placeholder="Share any thoughts you have about this product."
+//                 onChange={(e) => setComment(e.target.value)}
+//                 placeholder="Write something..."
 //               />
 //             </div>
 
@@ -730,29 +435,8 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-import { FormEvent, useMemo, useState, useEffect } from "react";
+// Orders.tsx
+import { FormEvent, useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { formatPKR } from "@/lib/currency";
 import { getDiscountForCollection, applyDiscount } from "@/data/discount";
@@ -771,6 +455,30 @@ import { Textarea } from "@/components/ui/textarea";
 import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+//
+// Supabase Session Helpers
+//
+function getSupabaseSession() {
+  const key = Object.keys(localStorage).find((k) => k.includes("-auth-token"));
+  if (!key) return null;
+  try {
+    return JSON.parse(localStorage.getItem(key) || "{}");
+  } catch {
+    return null;
+  }
+}
+
+function getAccessToken() {
+  return getSupabaseSession()?.access_token || null;
+}
+
+function getUserId() {
+  return getSupabaseSession()?.user?.id || null;
+}
+
+//
+// TYPES
+//
 interface ReviewTarget {
   orderId: number;
   productId: string;
@@ -784,11 +492,13 @@ interface OrderItem {
   quantity: number;
   size?: string;
   price: number;
+  discount: number;
+  color?: string | null;
 }
 
 interface Order {
   order_id: number;
-  user_id: number;
+  user_id: string;
   username: string;
   status: string;
   total_products: number;
@@ -797,6 +507,9 @@ interface Order {
   order_time: string;
 }
 
+//
+// MAIN COMPONENT
+//
 export default function Orders() {
   const { user } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -807,8 +520,9 @@ export default function Orders() {
   const [loading, setLoading] = useState(true);
   const [refreshToken, setRefreshToken] = useState(0);
   const [reviewStatus, setReviewStatus] = useState<{ [key: string]: boolean }>({});
+  const [paymentOpen, setPaymentOpen] = useState(false);
 
-  // Map statuses to badge and border styles
+
   const STATUS_STYLES: Record<string, { badge: string; border: string; card?: string }> = {
     pending: { badge: "bg-yellow-100 text-yellow-800", border: "border-yellow-300", card: "bg-yellow-50" },
     processing: { badge: "bg-blue-100 text-blue-800", border: "border-blue-300", card: "bg-blue-50" },
@@ -817,242 +531,282 @@ export default function Orders() {
     canceled: { badge: "bg-red-100 text-red-800", border: "border-red-300", card: "bg-red-50" },
   };
 
+  //
+  // FETCH ORDERS
+  //
   useEffect(() => {
-    if (!user?.id) {
-      setLoading(false);
-      return;
-    }
+    const uid = getUserId();
+    const token = getAccessToken();
 
-    async function fetchOrders() {
+    async function loadOrders() {
       try {
-        setLoading(true);
-        const userId = parseInt(user.id, 10);
-        if (isNaN(userId)) {
-          console.error("Invalid user ID:", user.id);
+        if (!uid || !token) {
           setOrders([]);
+          setLoading(false);
           return;
         }
-        const response = await fetch(`${API_BASE_URL}/users/${userId}/orders`);
+
+        setLoading(true);
+
+        const response = await fetch(`${API_BASE_URL}/users/${uid}/orders`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
         if (!response.ok) {
           if (response.status === 404) {
             setOrders([]);
+            setLoading(false);
             return;
           }
-          throw new Error(`Failed to fetch orders: ${response.statusText}`);
+          throw new Error(`Failed to load orders`);
         }
+
         const data: Order[] = await response.json();
         setOrders(data);
 
-        const statusMap: { [key: string]: boolean } = {};
+        // --- PARALLEL REVIEW CHECKS (big speed improvement) ---
+        const statusMap: Record<string, boolean> = {};
+        const checks: Promise<void>[] = [];
+
         for (const order of data) {
           for (const item of order.products) {
             const key = `${order.order_id}-${item.product_id}-${item.size ?? ""}`;
-            const reviewed = await hasReviewForOrderItem({
-              userId,
-              orderId: order.order_id,
-              productId: item.product_id,
-              size: item.size,
-            });
-            statusMap[key] = reviewed;
+            const p = hasReviewForItem(uid as string, order.order_id, item.product_id, item.size)
+              .then((res) => {
+                statusMap[key] = !!res;
+              })
+              .catch(() => {
+                statusMap[key] = false;
+              });
+            checks.push(p);
           }
         }
+
+        await Promise.all(checks);
         setReviewStatus(statusMap);
-      } catch (error) {
-        console.error("Failed to fetch orders:", error);
+
+      } catch (err) {
+        console.error(err);
         setOrders([]);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchOrders();
-  }, [user?.id, refreshToken]);
+    loadOrders();
+  }, [refreshToken]);
 
-  const openReviewDialog = (target: ReviewTarget) => {
+  //
+  // CHECK REVIEW
+  //
+  async function hasReviewForItem(
+    uid: string,
+    orderId: number,
+    productId: string,
+    size?: string
+  ) {
+    try {
+      const token = getAccessToken();
+      const res = await fetch(
+        `${API_BASE_URL}/reviews/check?user_id=${uid}&order_id=${orderId}&product_id=${productId}${size ? `&size=${size}` : ""}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (!res.ok) return false;
+      const data = await res.json();
+      return data.reviewed;
+    } catch {
+      return false;
+    }
+  }
+
+  //
+  // OPEN DIALOG
+  //
+  function openDialog(target: ReviewTarget) {
     setActiveTarget(target);
     setRating(5);
     setComment("");
     setDialogOpen(true);
-  };
+  }
 
-  const closeDialog = () => {
+  function closeDialog() {
     setDialogOpen(false);
     setActiveTarget(null);
-    setComment("");
-  };
+  }
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!activeTarget || !user) return;
+  //
+  // SUBMIT REVIEW
+  //
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
 
-    const userId = parseInt(user.id, 10);
-    if (isNaN(userId)) {
-      console.error("Invalid user ID:", user.id);
-      alert("Invalid user ID. Please try again.");
-      return;
-    }
+    if (!activeTarget) return;
+
+    const uid = getUserId();
+    const token = getAccessToken();
 
     const reviewData = {
-      user_id: userId,
+      user_id: uid,
       product_id: activeTarget.productId,
       stars: rating,
-      text: comment || undefined,
-      time: new Date().toISOString().split('T')[0],
+      text: comment || "",
+      time: new Date().toISOString(),
     };
 
     try {
-      const response = await fetch(`${API_BASE_URL}/reviews/`, {
+      const res = await fetch(`${API_BASE_URL}/reviews/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(reviewData),
       });
-      if (!response.ok) {
-        throw new Error(`Failed to create review: ${response.statusText}`);
+
+      if (!res.ok) {
+        console.error(await res.text());
+        throw new Error("Failed to submit review");
       }
+
       const key = `${activeTarget.orderId}-${activeTarget.productId}-${activeTarget.size ?? ""}`;
       setReviewStatus((prev) => ({ ...prev, [key]: true }));
-      setRefreshToken((prev) => prev + 1);
+
+      setRefreshToken((p) => p + 1);
       closeDialog();
-    } catch (error) {
-      console.error("Failed to create review:", error);
-      alert("Failed to submit review. Please try again.");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to submit review.");
     }
-  };
+  }
 
-  const hasReviewForOrderItem = async (params: {
-    userId: number;
-    orderId: number;
-    productId: string;
-    size?: string;
-  }) => {
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/reviews/check?user_id=${params.userId}&order_id=${params.orderId}&product_id=${params.productId}${params.size ? `&size=${params.size}` : ""}`
-      );
-      if (!response.ok) {
-        return false;
-      }
-      const data = await response.json();
-      return data.reviewed;
-    } catch (error) {
-      console.error("Error checking review:", error);
-      return false;
-    }
-  };
-
+  //
+  // RENDER
+  //
   if (!user) return <div className="container py-10">Please login to view your orders.</div>;
   if (loading) return <div className="container py-10">Loading orders...</div>;
 
   return (
     <main className="container py-10">
       <h1 className="font-serif text-3xl">My Orders</h1>
+
+
+      {/* PAYMENT ICON BUTTON */}
+      <div className="mt-4">
+        <Button 
+          variant="default"
+          className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white"
+          onClick={() => setPaymentOpen(true)}
+        >
+          💳 Payment Details
+        </Button>
+      </div>
+
+
       {orders.length === 0 ? (
         <p className="mt-4 text-muted-foreground">No orders yet.</p>
       ) : (
-        <div className="mt-6 space-y-4">
-          {orders.map((o) => (
+        <div className="mt-6 space-y-5">
+          {[...orders]
+            .sort((a, b) => b.order_id - a.order_id) // DESCENDING ORDER
+            .map((o) => (
             <div
               key={o.order_id}
-              className={`border rounded-lg p-4 space-y-3 ${STATUS_STYLES[o.status]?.border ?? "border-gray-200"} ${STATUS_STYLES[o.status]?.card ?? ""}`}
+              className={`border rounded-lg p-4 space-y-4 ${STATUS_STYLES[o.status]?.card ?? ""}`}
             >
-              <div className="flex items-center justify-between gap-4">
-                {/* Left: order info */}
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium">Order #R{o.order_id}{o.order_time.slice(-2)}</span>
-                  <span className="text-xs text-muted-foreground">{o.order_time}</span>
-                  {(() => {
-                    // Recompute displayed total using discounts when possible
-                    const computedTotal = o.products.reduce((s, item) => {
-                      const qty = item.quantity || 1;
-                      const prod = getProduct(String(item.product_id));
-                      const pct = prod ? getDiscountForCollection(prod.collection) : 0;
-                      const unit = qty > 0 ? Number(item.price) / qty : Number(item.price);
-                      const discountedUnit = applyDiscount(unit, pct);
-                      const line = Math.round(discountedUnit * qty);
-                      return s + line;
-                    }, 0);
-
-                    const totalQty = o.products.reduce((sum, item) => sum + (item.quantity || 1), 0);
-                    const deliveryCharge = totalQty < 3 ? 300 : 0;
-                    const totalWithDelivery = computedTotal + deliveryCharge;
-
-                    if (o.status === "pending") {
-                      return (
-                        <div className="text-xs text-muted-foreground space-y-1">
-                          <span className="block">Subtotal: {formatPKR(computedTotal)}</span>
-                          {deliveryCharge > 0 && <span className="block text-orange-600">Delivery: {formatPKR(deliveryCharge)}</span>}
-                          <span className="block font-medium">Total: {formatPKR(totalWithDelivery)}</span>
-                        </div>
-                      );
-                    }
-
-                    if (o.status === "canceled") {
-                      return <span className="text-xs text-muted-foreground">Canceled (Original Total: {formatPKR(o.total_price)})</span>;
-                    }
-
-                    if (o.status === "delivered") {
-                      return (
-                        <div className="text-xs text-muted-foreground space-y-1">
-                          <span className="block">Paid: {formatPKR(totalWithDelivery)}</span>
-                          {deliveryCharge > 0 && <span className="block text-sm text-orange-600">(includes {formatPKR(deliveryCharge)} delivery)</span>}
-                        </div>
-                      );
-                    }
-
-                    const advance = Math.round(totalWithDelivery * 0.25);
-                    return (
-                      <div className="text-xs text-muted-foreground space-y-1">
-                        <span className="block">Subtotal: {formatPKR(computedTotal)}</span>
-                        {deliveryCharge > 0 && <span className="block text-orange-600">Delivery: {formatPKR(deliveryCharge)}</span>}
-                        <span className="block font-medium">Total: {formatPKR(totalWithDelivery)}</span>
-                        <span className="block">Paid: {formatPKR(advance)} | Remaining: {formatPKR(totalWithDelivery - advance)}</span>
-                      </div>
-                    );
-                  })()}
+              {/* HEADER */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold">Order #{o.order_id}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(o.order_time).toLocaleString()}
+                  </p>
                 </div>
 
-                {/* Right: dominant status pill */}
-                <div className="flex items-center">
-                  <span
-                    className={`inline-flex items-center justify-center px-4 py-2 rounded-full text-sm font-semibold ${STATUS_STYLES[o.status]?.badge ?? "bg-gray-100 text-gray-800"}`}
-                  >
-                    {o.status.replace("_", " ")}
-                  </span>
-                </div>
+                <span
+                  className={`px-3 py-1 rounded-full text-sm font-semibold ${STATUS_STYLES[o.status]?.badge}`}
+                >
+                  {o.status}
+                </span>
               </div>
-              <ul className="space-y-2">
-                {o.products.map((item) => {
-                  const key = `${o.order_id}-${item.product_id}-${item.size ?? ""}`;
-                  const reviewed = reviewStatus[key] ?? false;
 
-                  // Compute discounted line price when possible
+              {/* PRODUCT LIST */}
+              <ul className="space-y-3">
+                {o.products.map((item, idx) => {
+                  const prod = getProduct(item.product_id);
+
                   const qty = item.quantity || 1;
-                  const prod = getProduct(String(item.product_id));
-                  const pct = prod ? getDiscountForCollection(prod.collection) : 0;
-                  const unit = qty > 0 ? Number(item.price) / qty : Number(item.price);
-                  const discountedUnit = applyDiscount(unit, pct);
-                  const linePrice = Math.round(discountedUnit * qty);
+                  // Backend already gives line price, so backend unit price:
+                  const backendUnit = Number(item.price) / qty;
+                  
+                  // Use backend discount (percentage)
+                  const pct = item.discount || 0;
+                  
+                  // Apply discount
+                  const discountedUnit = applyDiscount(backendUnit, pct);
+                  
+                  // Final line price
+                  const line = Math.round(discountedUnit * qty);
+
+                  const key = `${o.order_id}-${item.product_id}-${item.size ?? ""}`;
+                  const reviewed = reviewStatus[key];
 
                   return (
                     <li
-                      key={`${item.product_id}-${item.size ?? ""}`}
-                      className="flex flex-col gap-1 rounded-md border border-dashed p-3 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between md:gap-3"
+                      key={`${key}-${idx}`} // make unique by including order + index
+                      className="flex flex-col md:flex-row items-start md:items-center justify-between border p-3 rounded-md"
                     >
-                      <span>
-                        {item.product_name} {item.size ? `(${item.size})` : ""} × {item.quantity} — {formatPKR(linePrice)}
-                        {pct > 0 && <span className="ml-2 text-xs text-muted-foreground line-through">{formatPKR(Number(item.price))}</span>}
-                      </span>
+                      <div className="flex gap-3">
+                        {/* IMAGE */}
+                        <img
+                          src={prod?.image || "/placeholder.svg"}
+                          className="w-16 h-16 rounded-md border object-cover"
+                        />
+
+                        <div>
+                          <p className="font-medium">{item.product_name}</p>
+
+                          {prod?.collection && (
+                            <p className="text-xs text-muted-foreground">
+                              Collection: {prod.collection}
+                            </p>
+                          )}
+
+                          {item.color && (
+                            <p className="text-xs text-muted-foreground">
+                              Color: {item.color}
+                            </p>
+                          )}
+
+                          <p className="text-xs">
+                            {item.size ? `Size: ${item.size} — ` : ""}
+                            Qty: {item.quantity}
+                          </p>
+
+                          <p className="text-xs font-semibold">
+                            {formatPKR(discountedUnit)} × {item.quantity} = {formatPKR(line)}
+                          </p>
+                          
+                          {pct > 0 && (
+                            <p className="text-xs line-through text-muted-foreground">
+                              {formatPKR(backendUnit)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
                       {reviewed ? (
-                        <Button variant="secondary" size="sm" disabled>
+                        <Button variant="secondary" disabled size="sm">
                           Review submitted
                         </Button>
                       ) : (
                         <Button
                           size="sm"
                           onClick={() =>
-                            openReviewDialog({
+                            openDialog({
                               orderId: o.order_id,
                               productId: item.product_id,
                               productName: item.product_name,
@@ -1067,62 +821,76 @@ export default function Orders() {
                   );
                 })}
               </ul>
+
+              {/* DELIVERY CHARGE DISPLAY */}
+              <div className="text-sm font-medium mt-2">
+                {(() => {
+                  const totalQty = o.products.reduce((s, i) => s + i.quantity, 0);
+                  const sub = o.products.reduce((s, i) => {
+                    const qty = i.quantity || 1;
+                    const backendUnit = Number(i.price) / qty;
+                    const discountedUnit = i.discount
+                      ? backendUnit - (backendUnit * i.discount) / 100
+                      : backendUnit;
+                    return s + discountedUnit * qty;
+                  }, 0);
+              
+                  const dc = (sub >= 5000 || totalQty >= 3) ? 0 : 200;
+              
+                  return (
+                    <p className="text-muted-foreground">
+                      Delivery Charge: {dc === 0 ? "Free" : `Rs ${dc}`}
+                    </p>
+                  );
+                })()}
+              </div>
+
+
+
             </div>
           ))}
         </div>
       )}
 
-      <Dialog
-        open={dialogOpen}
-        onOpenChange={(open) => {
-          if (open) {
-            setDialogOpen(true);
-          } else {
-            closeDialog();
-          }
-        }}
-      >
+      {/* REVIEW DIALOG */}
+      <Dialog open={dialogOpen} onOpenChange={(v) => (v ? setDialogOpen(true) : closeDialog())}>
         <DialogContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <DialogHeader>
               <DialogTitle>Review {activeTarget?.productName}</DialogTitle>
-              <DialogDescription>Share your experience to help others.</DialogDescription>
+              <DialogDescription>Share your experience.</DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-2">
-              <span className="text-sm font-medium">Rating</span>
-              <div className="flex gap-2">
-                {Array.from({ length: 5 }).map((_, index) => {
-                  const value = index + 1;
-                  const active = value <= rating;
+            {/* RATING */}
+            <div>
+              <p className="text-sm font-medium mb-1">Rating</p>
+              <div className="flex gap-1">
+                {Array.from({ length: 5 }).map((_, idx) => {
+                  const val = idx + 1;
                   return (
                     <button
-                      key={value}
+                      key={val}
                       type="button"
-                      onClick={() => setRating(value)}
+                      onClick={() => setRating(val)}
                       className={cn(
-                        "rounded-full border px-3 py-2 transition",
-                        active
-                          ? "border-accent bg-accent text-accent-foreground"
-                          : "border-input bg-background text-muted-foreground hover:border-accent hover:text-foreground"
+                        "p-2 rounded-md border",
+                        val <= rating ? "bg-yellow-400 text-white" : ""
                       )}
                     >
-                      <Star className={cn("h-4 w-4", active ? "fill-current" : "")} />
+                      <Star className="w-4 h-4" />
                     </button>
                   );
                 })}
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="review-comment" className="text-sm font-medium">
-                Description (optional)
-              </label>
+            {/* COMMENT */}
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Description (optional)</p>
               <Textarea
-                id="review-comment"
                 value={comment}
-                onChange={(event) => setComment(event.target.value)}
-                placeholder="Share any thoughts you have about this product."
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Write something..."
               />
             </div>
 
@@ -1135,6 +903,54 @@ export default function Orders() {
           </form>
         </DialogContent>
       </Dialog>
+
+
+      {/* PAYMENT DETAILS POPUP */}
+      <Dialog open={paymentOpen} onOpenChange={setPaymentOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold">Payment Instructions</DialogTitle>
+            <DialogDescription>
+              Please complete your payment using the details below.
+            </DialogDescription>
+          </DialogHeader>
+      
+          <div className="space-y-4 text-sm">
+      
+            <div className="p-3 rounded-md bg-purple-50 border border-purple-200">
+              <p className="font-medium text-purple-700">📱 JazzCash</p>
+              <p className="mt-1 text-purple-900 text-base">03240405762 (MARIYEM NABEEL)</p>
+            </div>
+      
+            <div className="p-3 rounded-md bg-green-50 border border-green-200">
+              <p className="font-medium text-green-700">🏦 Bank AL Habib</p>
+              <p className="mt-1 text-green-900">
+                PK03BAHL5509008101070301 (Maryam Nabeel)
+              </p>
+            </div>
+      
+            <div className="p-3 rounded-md bg-yellow-50 border border-yellow-200">
+              <p className="font-medium text-yellow-700">📩 Email Payment Proof</p>
+              <p className="mt-1">rangistaarttowear@gmail.com</p>
+            </div>
+      
+            <div className="p-3 rounded-md bg-blue-50 border border-blue-200">
+              <p className="font-medium text-blue-700">📲 WhatsApp Screenshot</p>
+              <p className="mt-1">Send us a screenshot on WhatsApp after payment.</p>
+            </div>
+      
+            <p className="text-sm text-muted-foreground">
+              Once you send us proof, your order status will be updated within <strong>1 hour</strong>.
+            </p>
+          </div>
+      
+          <DialogFooter>
+            <Button onClick={() => setPaymentOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
     </main>
   );
 }

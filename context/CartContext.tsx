@@ -1,282 +1,593 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { getStock } from "@/data/stock";
-import { API_BASE_URL } from "@/lib/api-config";
-import { applyDiscount, getDiscountForCollection } from "@/data/discount";
+// // CartContext.tsx
+// import React, {
+//   createContext,
+//   useContext,
+//   useState,
+//   useEffect,
+//   ReactNode,
+// } from "react";
+// import { API_BASE_URL } from "@/lib/api-config";
 
+// //
+// // ---------------------------------------------------------
+// // HELPERS → Read Supabase token & user ID from localStorage
+// // ---------------------------------------------------------
+// //
+// function getSupabaseSession() {
+//   const key = Object.keys(localStorage).find((k) =>
+//     k.includes("-auth-token")
+//   );
+//   if (!key) return null;
+
+//   try {
+//     return JSON.parse(localStorage.getItem(key) || "{}");
+//   } catch {
+//     return null;
+//   }
+// }
+
+// function getAccessToken() {
+//   const session = getSupabaseSession();
+//   return session?.access_token || null;
+// }
+
+// function getUserId() {
+//   const session = getSupabaseSession();
+//   return session?.user?.id || null;
+// }
+
+// //
+// // ---------------------------------------------------------
+// // CART TYPES
+// // ---------------------------------------------------------
+// //
+// export type CartItem = {
+//   id: string;
+//   name: string;
+//   image: string;
+//   price: number;
+//   qty: number;
+//   size: string;
+//   collection?: string;
+//   color?: string | null;
+//   discount?: number;
+// };
+
+// type CartContextType = {
+//   items: CartItem[];
+//   subtotal: number;
+//   deliveryCharge: number;
+//   total: number;
+//   addItem: (item: Omit<CartItem, "qty">, qty?: number) => Promise<void>;
+//   updateQty: (id: string, size: string, color: string | null, qty: number) => Promise<void>;
+//   removeItem: (id: string, size: string, color: string | null) => Promise<void>;
+//   refreshCart: () => Promise<void>;
+// };
+
+// const CartContext = createContext<CartContextType | undefined>(undefined);
+
+// export function useCart() {
+//   const ctx = useContext(CartContext);
+//   if (!ctx) {
+//     throw new Error("useCart must be inside CartProvider");
+//   }
+//   return ctx;
+// }
+
+// //
+// // ---------------------------------------------------------
+// // MAIN PROVIDER
+// // ---------------------------------------------------------
+// //
+// export function CartProvider({ children }: { children: ReactNode }) {
+//   const [items, setItems] = useState<CartItem[]>([]);
+//   const [subtotal, setSubtotal] = useState(0);
+//   const [deliveryCharge, setDeliveryCharge] = useState(300);
+//   const [total, setTotal] = useState(0);
+
+//   //
+//   // FETCH CART FROM BACKEND
+//   //
+//   async function fetchCart() {
+//     const userId = getUserId();
+//     const token = getAccessToken();
+
+//     if (!userId || !token) {
+//       console.warn("No user logged in — cart empty");
+//       setItems([]);
+//       return;
+//     }
+
+//     try {
+//       const res = await fetch(`${API_BASE_URL}/cart/${userId}`, {
+//         headers: { Authorization: `Bearer ${token}` },
+//       });
+
+//       if (!res.ok) {
+//         console.error("Fetch cart failed:", res.status);
+//         setItems([]);
+//         return;
+//       }
+
+//       const data = await res.json();
+
+//       const mapped: CartItem[] = data.items.map((item: any) => ({
+//         id: item.product_id,
+//         name: item.product_name,
+//         image: item.image,
+//         price: item.price,
+//         qty: item.quantity,
+//         size: item.size,
+//         collection: item.collection,
+//         color: item.color ?? null,
+//         discount: item.discount ?? 0,
+//       }));
+
+//       setItems(mapped);
+//     } catch (err) {
+//       console.error("FETCH CART ERROR:", err);
+//       setItems([]);
+//     }
+//   }
+
+//   //
+//   // ADD ITEM
+//   //
+//   async function addItem(item: Omit<CartItem, "qty">, qty: number = 1) {
+//     const userId = getUserId();
+//     const token = getAccessToken();
+
+//     if (!userId || !token) {
+//       alert("Please log in first.");
+//       return;
+//     }
+
+//     try {
+//       const body = {
+//         user_id: userId,
+//         product_id: item.id,
+//         size: item.size,
+//         quantity: qty,
+//         color: item.color ?? null,
+//       };
+
+//       const res = await fetch(`${API_BASE_URL}/cart/`, {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//           Authorization: `Bearer ${token}`,
+//         },
+//         body: JSON.stringify(body),
+//       });
+
+//       if (!res.ok) throw new Error("Add item failed");
+
+//       await fetchCart();
+//     } catch (err) {
+//       console.error("ADD ITEM ERROR:", err);
+//     }
+//   }
+
+//   //
+//   // UPDATE QUANTITY
+//   //
+//   async function updateQty(id: string, size: string, color: string | null, qty: number) {
+//     const userId = getUserId();
+//     const token = getAccessToken();
+
+//     if (!userId || !token) return;
+
+//     try {
+//       const res = await fetch(`${API_BASE_URL}/cart/update`, {
+//         method: "PUT",
+//         headers: {
+//           "Content-Type": "application/json",
+//           Authorization: `Bearer ${token}`,
+//         },
+//         body: JSON.stringify({
+//           user_id: userId,
+//           product_id: id,
+//           size,
+//           color,
+//           quantity: qty,
+//         }),
+//       });
+
+//       if (!res.ok) throw new Error("Update qty failed");
+
+//       await fetchCart();
+//     } catch (err) {
+//       console.error("UPDATE QTY ERROR:", err);
+//     }
+//   }
+
+//   //
+//   // REMOVE ITEM
+//   //
+//   async function removeItem(id: string, size: string, color: string | null) {
+//     const userId = getUserId();
+//     const token = getAccessToken();
+
+//     if (!userId || !token) return;
+
+//     try {
+//       const res = await fetch(`${API_BASE_URL}/cart/remove`, {
+//         method: "DELETE",
+//         headers: {
+//           "Content-Type": "application/json",
+//           Authorization: `Bearer ${token}`,
+//         },
+//         body: JSON.stringify({
+//           user_id: userId,
+//           product_id: id,
+//           size,
+//           color,
+//         }),
+//       });
+
+//       if (!res.ok) throw new Error("Remove failed");
+
+//       await fetchCart();
+//     } catch (err) {
+//       console.error("REMOVE ERROR:", err);
+//     }
+//   }
+
+//   //
+//   // CALCULATE TOTALS
+//   //
+//   useEffect(() => {
+//     const sub = items.reduce((sum, i) => {
+//       // Calculate discounted price
+//       const actualPrice =
+//         i.discount && i.discount > 0
+//           ? i.price - (i.price * i.discount) / 100
+//           : i.price;
+  
+//       return sum + actualPrice * i.qty;
+//     }, 0);
+  
+//     setSubtotal(sub);
+  
+//     const totalProducts = items.reduce((s, i) => s + i.qty, 0);
+  
+//     const dc = sub > 3000 || totalProducts >= 3 ? 0 : 300;
+//     setDeliveryCharge(dc);
+  
+//     setTotal(sub + dc);
+//   }, [items]);
+
+
+//   //
+//   // INITIAL LOAD
+//   //
+//   async function refreshCart() {
+//     await fetchCart();
+//   }
+
+//   useEffect(() => {
+//     refreshCart();
+//   }, []);
+
+//   return (
+//     <CartContext.Provider
+//       value={{
+//         items,
+//         subtotal,
+//         deliveryCharge,
+//         total,
+//         addItem,
+//         updateQty,
+//         removeItem,
+//         refreshCart,
+//       }}
+//     >
+//       {children}
+//     </CartContext.Provider>
+//   );
+// }
+
+
+
+
+
+
+
+
+
+
+
+// CartContext.tsx
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import { API_BASE_URL } from "@/lib/api-config";
+
+//
+// ---------------------------------------------------------
+// HELPERS → Read Supabase token & user ID from localStorage
+// ---------------------------------------------------------
+//
+function getSupabaseSession() {
+  const key = Object.keys(localStorage).find((k) =>
+    k.includes("-auth-token")
+  );
+  if (!key) return null;
+
+  try {
+    return JSON.parse(localStorage.getItem(key) || "{}");
+  } catch {
+    return null;
+  }
+}
+
+function getAccessToken() {
+  const session = getSupabaseSession();
+  return session?.access_token || null;
+}
+
+function getUserId() {
+  const session = getSupabaseSession();
+  return session?.user?.id || null;
+}
+
+//
+// ---------------------------------------------------------
+// CART TYPES
+// ---------------------------------------------------------
+//
 export type CartItem = {
-  id: string; // product_id from API
+  id: string;
   name: string;
-  price: number; // total price for the item's quantity in PKR
   image: string;
-  size?: string;
-  collection?: string;
+  price: number;
   qty: number;
+  size: string;
+  collection?: string;
+  color?: string | null;
+  discount?: number;
 };
 
-interface CartContextValue {
+type CartContextType = {
   items: CartItem[];
-  count: number;
-  totalProducts: number;
   subtotal: number;
-  addItem: (item: Omit<CartItem, "qty">, qty?: number) => void;
-  removeItem: (id: string, size?: string) => void;
-  updateQty: (id: string, size: string, qty: number) => void;
-  clear: () => void;
-}
+  deliveryCharge: number;
+  total: number;
+  addItem: (item: Omit<CartItem, "qty">, qty?: number) => Promise<void>;
+  updateQty: (id: string, size: string, color: string | null, qty: number) => Promise<void>;
+  removeItem: (id: string, size: string, color: string | null) => Promise<void>;
+  refreshCart: () => Promise<void>;
+};
 
-const CartContext = createContext<CartContextValue | undefined>(undefined);
-import { useAuth } from "@/context/AuthContext";
-
-export function CartProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
-  const [items, setItems] = useState<CartItem[]>([]);
-  const [totalProducts, setTotalProducts] = useState<number>(0);
-
-  const fetchCart = async (userId: number) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/cart/${userId}`);
-      if (!response.ok) {
-        if (response.status === 404) {
-          setItems([]);
-          setTotalProducts(0);
-          return;
-        }
-        throw new Error(`Failed to fetch cart: ${response.statusText}`);
-      }
-      const data = await response.json();
-      const cartItems = data.items.map((item: any) => {
-        const qty = Number(item.quantity) || 1;
-        const baseTotal = Number(item.price) || 0;
-        const unit = qty > 0 ? baseTotal / qty : baseTotal;
-        const pct = getDiscountForCollection(item.collection);
-        const discountedUnit = applyDiscount(unit, pct);
-        const finalTotal = pct ? discountedUnit * qty : baseTotal;
-        return {
-          id: String(item.product_id),
-          name: item.product_name,
-          price: Math.round(finalTotal),
-          image: item.image,
-          size: item.size,
-          collection: item.collection,
-          qty,
-        } as CartItem;
-      });
-      setItems(cartItems);
-      setTotalProducts(data.total_products);
-      // Log the fetched items and calculated subtotal for debugging
-      const calculatedSubtotal = cartItems.reduce((s, i) => s + i.price, 0);
-      console.log("Fetched cart:", { userId, items: cartItems, totalProducts: data.total_products, calculatedSubtotal });
-    } catch (error) {
-      console.error("Error fetching cart:", error);
-      setItems([]);
-      setTotalProducts(0);
-    }
-  };
-
-  useEffect(() => {
-    if (user) {
-      const userId = parseInt(user.id, 10);
-      if (isNaN(userId)) {
-        console.error("Invalid user ID:", user.id);
-        setItems([]);
-        setTotalProducts(0);
-        return;
-      }
-      fetchCart(userId);
-    } else {
-      setItems([]);
-      setTotalProducts(0);
-    }
-  }, [user]);
-
-  const addItem = async (item: Omit<CartItem, "qty">, qty = 1) => {
-    if (!user) {
-      alert("Please login to add to cart.");
-      return;
-    }
-    const userId = parseInt(user.id, 10);
-    if (isNaN(userId)) {
-      console.error("Invalid user ID:", user.id);
-      alert("Invalid user ID. Please try again.");
-      return;
-    }
-    const available = getStock(item.id, item.size as any);
-    if (available <= 0) return;
-    const addQty = Math.min(qty, available);
-    if (addQty <= 0) return;
-
-    const payload = {
-      user_id: userId,
-      product_id: item.id,
-      size: item.size,
-      quantity: addQty,
-    };
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/cart/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-      if (!response.ok) {
-        throw new Error(`Failed to add to cart: ${response.statusText}`);
-      }
-      await fetchCart(userId); // Refresh cart after adding
-    } catch (error) {
-      console.error("Error adding to cart:", error);
-      alert("Failed to add item to cart. Please try again.");
-    }
-  };
-
-  const removeItem = async (id: string, size?: string) => {
-    if (!user) return;
-    const userId = parseInt(user.id, 10);
-    if (isNaN(userId)) {
-      console.error("Invalid user ID:", user.id);
-      alert("Invalid user ID. Please try again.");
-      return;
-    }
-    if (!id || id === "undefined") {
-      console.error("Invalid product ID:", id, "Size:", size);
-      alert("Cannot remove item: Invalid product ID.");
-      return;
-    }
-    console.log("Attempting to remove item:", { userId, productId: id, size }); // Debug log
-    try {
-      const url = `${API_BASE_URL}/cart/${userId}/${id}${size ? `?size=${size}` : ""}`;
-      console.log("DELETE request URL:", url); // Debug log
-      const response = await fetch(url, {
-        method: "DELETE",
-      });
-      if (!response.ok) {
-        throw new Error(`Failed to remove item: ${response.statusText}`);
-      }
-      await fetchCart(userId); // Refresh cart after removal
-    } catch (error) {
-      console.error("Error removing item:", error);
-      alert("Failed to remove item from cart. Please try again.");
-    }
-  };
-
-  const updateQty = async (id: string, size: string, qty: number) => {
-    if (!user) return;
-    const userId = parseInt(user.id, 10);
-    if (isNaN(userId)) {
-      console.error("Invalid user ID:", user.id);
-      alert("Invalid user ID. Please try again.");
-      return;
-    }
-    if (!id || id === "undefined") {
-      console.error("Invalid product ID:", id, "Size:", size);
-      alert("Cannot update quantity: Invalid product ID.");
-      return;
-    }
-    const available = getStock(id, size as any);
-    const target = Math.max(1, Math.floor(qty));
-    const desiredQty = Math.min(target, available);
-
-    const payload = {
-      size,
-      quantity: desiredQty,
-    };
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/cart/${userId}/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-      if (!response.ok) {
-        throw new Error(`Failed to update quantity: ${response.statusText}`);
-      }
-      await fetchCart(userId); // Refresh cart after update
-    } catch (error) {
-      console.error("Error updating quantity:", error);
-      alert("Failed to update cart quantity. Please try again.");
-    }
-  };
-
-  const clear = async () => {
-    if (!user) return;
-    const userId = parseInt(user.id, 10);
-    if (isNaN(userId)) {
-      console.error("Invalid user ID:", user.id);
-      alert("Invalid user ID. Please try again.");
-      return;
-    }
-    try {
-      const response = await fetch(`${API_BASE_URL}/cart/${userId}`, {
-        method: "DELETE",
-      });
-      // Handle 204 No Content or other success statuses
-      if (response.ok || response.status === 204) {
-        setItems([]);
-        setTotalProducts(0);
-      } else {
-        // Clone response before attempting to read body to avoid "body stream already read" errors
-        const cloned = response.clone();
-        let errorData: any = {};
-        try {
-          errorData = await cloned.json();
-        } catch (e) {
-          // Could not parse JSON (empty body or already read); fallback to empty
-          console.warn("Could not parse error body for clear():", e);
-        }
-        throw new Error((errorData && (errorData.detail || errorData.message)) || `Failed to clear cart 1: ${response.statusText}`);
-      }
-    } catch (error) {
-      // If the cart is already empty (e.g., cleared by /orders/from-cart/), treat it as success
-      if (error.message.includes("404") || error.message.includes("Not Found")) {
-        setItems([]);
-        setTotalProducts(0);
-        return;
-      }
-      console.error("Error clearing cart:", error);
-      // alert("Failed to clear cart 2. Please try again.");
-    }
-  };
-
-  const subtotal = useMemo(() => {
-    const total = items.reduce((s, i) => s + i.price, 0);
-    console.log("Calculated subtotal:", total, "Items:", items); // Debug subtotal
-    return total;
-  }, [items]);
-
-  const count = useMemo(() => {
-    const totalQty = items.reduce((s, i) => s + i.qty, 0);
-    console.log("Calculated count:", totalQty); // Debug count
-    return totalQty;
-  }, [items]);
-
-  const value = useMemo(
-    () => ({ items, count, totalProducts, subtotal, addItem, removeItem, updateQty, clear }),
-    [items, count, totalProducts, subtotal]
-  );
-
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
-}
+const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function useCart() {
   const ctx = useContext(CartContext);
   if (!ctx) {
-    if (typeof window !== "undefined") {
-      console.warn("useCart used outside CartProvider; falling back to no-op context");
-    }
-    const fallback: CartContextValue = {
-      items: [],
-      count: 0,
-      totalProducts: 0,
-      subtotal: 0,
-      addItem: () => {},
-      removeItem: () => {},
-      updateQty: () => {},
-      clear: () => {},
-    };
-    return fallback;
+    throw new Error("useCart must be inside CartProvider");
   }
   return ctx;
+}
+
+//
+// ---------------------------------------------------------
+// MAIN PROVIDER
+// ---------------------------------------------------------
+//
+export function CartProvider({ children }: { children: ReactNode }) {
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [subtotal, setSubtotal] = useState(0);
+  const [deliveryCharge, setDeliveryCharge] = useState(300);
+  const [total, setTotal] = useState(0);
+
+  //
+  // FETCH CART FROM BACKEND
+  //
+  async function fetchCart() {
+    const userId = getUserId();
+    const token = getAccessToken();
+
+    if (!userId || !token) {
+      console.warn("No user logged in — cart empty");
+      setItems([]);
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/cart/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        // Treat 404 as "empty cart" (not an error)
+        if (res.status === 404) {
+          setItems([]);
+          return;
+        }
+        // For other errors, log once and set empty cart (avoid noisy re-renders)
+        console.error("Fetch cart failed:", res.status, await res.text().catch(() => ""));
+        setItems([]);
+        return;
+      }
+
+      const data = await res.json();
+
+      const mapped: CartItem[] = (data.items || []).map((item: any) => ({
+        id: item.product_id,
+        name: item.product_name,
+        image: item.image,
+        price: item.price,
+        qty: item.quantity,
+        size: item.size,
+        collection: item.collection,
+        color: item.color ?? null,
+        discount: item.discount ?? 0,
+      }));
+
+      setItems(mapped);
+    } catch (err) {
+      console.error("FETCH CART ERROR:", err);
+      setItems([]);
+    }
+  }
+
+  //
+  // ADD ITEM
+  //
+  async function addItem(item: Omit<CartItem, "qty">, qty: number = 1) {
+    const userId = getUserId();
+    const token = getAccessToken();
+
+    if (!userId || !token) {
+      alert("Please log in first.");
+      return;
+    }
+
+    try {
+      const body = {
+        user_id: userId,
+        product_id: item.id,
+        size: item.size,
+        quantity: qty,
+        color: item.color ?? null,
+      };
+
+      const res = await fetch(`${API_BASE_URL}/cart/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) throw new Error("Add item failed");
+
+      await fetchCart();
+    } catch (err) {
+      console.error("ADD ITEM ERROR:", err);
+    }
+  }
+
+  //
+  // UPDATE QUANTITY
+  //
+  async function updateQty(id: string, size: string, color: string | null, qty: number) {
+    const userId = getUserId();
+    const token = getAccessToken();
+
+    if (!userId || !token) return;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/cart/update`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          product_id: id,
+          size,
+          color,
+          quantity: qty,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Update qty failed");
+
+      await fetchCart();
+    } catch (err) {
+      console.error("UPDATE QTY ERROR:", err);
+    }
+  }
+
+  //
+  // REMOVE ITEM
+  //
+  async function removeItem(id: string, size: string, color: string | null) {
+    const userId = getUserId();
+    const token = getAccessToken();
+
+    if (!userId || !token) return;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/cart/remove`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          product_id: id,
+          size,
+          color,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Remove failed");
+
+      await fetchCart();
+    } catch (err) {
+      console.error("REMOVE ERROR:", err);
+    }
+  }
+
+  //
+  // CALCULATE TOTALS
+  //
+  useEffect(() => {
+    const sub = items.reduce((sum, i) => {
+      // Calculate discounted price
+      const actualPrice =
+        i.discount && i.discount > 0
+          ? i.price - (i.price * i.discount) / 100
+          : i.price;
+  
+      return sum + actualPrice * i.qty;
+    }, 0);
+  
+    setSubtotal(sub);
+  
+    const totalProducts = items.reduce((s, i) => s + i.qty, 0);
+  
+    const dc = (totalProducts === 0 || sub >= 5000 || totalProducts >= 3) ? 0 : 200;
+    setDeliveryCharge(dc);
+  
+    setTotal(sub + dc);
+  }, [items]);
+
+
+  //
+  // INITIAL LOAD
+  //
+  async function refreshCart() {
+    await fetchCart();
+  }
+
+  useEffect(() => {
+    refreshCart();
+  }, []);
+
+  return (
+    <CartContext.Provider
+      value={{
+        items,
+        subtotal,
+        deliveryCharge,
+        total,
+        addItem,
+        updateQty,
+        removeItem,
+        refreshCart,
+      }}
+    >
+      {children}
+    </CartContext.Provider>
+  );
 }

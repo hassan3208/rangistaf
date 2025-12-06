@@ -539,6 +539,9 @@ export type CatalogProduct = {
   image: string;
   images?: string[];
   collection: string;
+  category: string;          // ⭐ NEW
+  discount: number;          // ⭐ NEW
+  colors?: string[];          // ⭐ NEW
   total_reviews: number;
   average_rating: number;
   XS_price: number;
@@ -593,6 +596,11 @@ function ensureCatalogInitialized() {
     image: p.image,
     images: p.images ?? [p.image],
     collection: p.collection,
+
+    category: p.category,      // ⭐ NEW
+    discount: p.discount,      // ⭐ NEW
+    colors: p.colors ?? [],    // ⭐ NEW
+
     total_reviews: p.total_reviews,
     average_rating: p.average_rating,
     XS_price: p.XS_price,
@@ -680,6 +688,11 @@ function migrateCatalog() {
         kids: base.kids,
         total_reviews: base.total_reviews,
         average_rating: base.average_rating,
+
+        // ⭐ ADD THESE
+        category: base.category,
+        discount: base.discount,
+        colors: base.colors ?? [],
       };
     }
 
@@ -714,28 +727,34 @@ function mergeWithBase(item: CatalogProduct): CatalogProduct {
   const average_rating = item.average_rating === base.average_rating ? item.average_rating : base.average_rating;
 
   return {
-    ...item,
-    images,
-    image,
-    name,
-    collection,
-    description,
-    XS_price,
-    S_price,
-    M_price,
-    L_price,
-    XL_price,
-    XXL_price,
-    XS_stock,
-    S_stock,
-    M_stock,
-    L_stock,
-    XL_stock,
-    XXL_stock,
-    kids,
-    total_reviews,
-    average_rating,
-  };
+   ...item,
+   images,
+   image,
+   name,
+   collection,
+   description,
+   XS_price,
+   S_price,
+   M_price,
+   L_price,
+   XL_price,
+   XXL_price,
+   XS_stock,
+   S_stock,
+   M_stock,
+   L_stock,
+   XL_stock,
+   XXL_stock,
+   kids,
+   total_reviews,
+   average_rating,
+ 
+   // ⭐ ADD THESE
+   category: item.category ?? base.category,
+   discount: item.discount ?? base.discount,
+   colors: item.colors ?? base.colors ?? [],
+ };
+
 }
 
 export function getProducts(): CatalogProduct[] {

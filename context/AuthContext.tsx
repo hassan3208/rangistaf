@@ -204,23 +204,31 @@
 
 
 
-
-import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  ReactNode,
+} from "react";
 import axios from "axios";
 import { API_BASE_URL } from "@/lib/api-config";
-import { createClient, SupabaseClient, Session, User as SupabaseUser } from "@supabase/supabase-js";
-
-/**
- * NOTE:
- * - Uses the same Supabase URL / anon key as your welcome.html.
- * - If you prefer to store these in env vars, replace the constants below with env/config values.
- */
+import {
+  createClient,
+  SupabaseClient,
+  Session,
+  User as SupabaseUser,
+} from "@supabase/supabase-js";
 
 const SUPABASE_URL = "https://cgnxzhlufpomntqygmvk.supabase.co";
 const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnbnh6aGx1ZnBvbW50cXlnbXZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ2NDI0NDQsImV4cCI6MjA4MDIxODQ0NH0.iIjDMMAiYK_AVk7Jovc0gbxZWsVjnNbedj4nXIhfftM";
 
-const supabase: SupabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase: SupabaseClient = createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
 
 export type User = {
   id: string;
@@ -247,7 +255,7 @@ interface AuthContextValue {
     city: string,
     contact_number_2?: string
   ) => Promise<void>;
-  login: (login: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   supabaseClient: SupabaseClient;
@@ -257,90 +265,89 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 const LS_USER_KEY = "rangista_user";
 const LS_TOKEN_KEY = "token";
-const API_BASE = API_BASE_URL; // keep existing config
+const API_BASE = API_BASE_URL;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User>(null);
   const [loading, setLoading] = useState(true);
 
-  // Initialize: try to reuse session from supabase or token from localStorage
+  /** ------------------------------------------------------
+   *  INITIAL LOAD — RESTORE SESSION SAFELY
+   * ------------------------------------------------------ */
   useEffect(() => {
-    // Keep localStorage clean (same as before)
-    Object.keys(localStorage).forEach((key) => {
-      if (key !== "rangista_favorites" && key !== LS_TOKEN_KEY) {
-        localStorage.removeItem(key);
-      }
-    });
+    const restore = async () => {
+      try {
+        // 1) Restore Supabase session
+        const { data } = await supabase.auth.getSession();
+        const session: Session | null = data.session;
 
-    // 1) check supabase session
-    supabase.auth.getSession().then(({ data }) => {
-      const session: Session | null = data.session;
-      if (session) {
-        const token = session.access_token;
-        localStorage.setItem(LS_TOKEN_KEY, token);
-        // Try to load profile from backend
-        const supabaseUser = session.user as SupabaseUser;
-        if (supabaseUser?.id) {
-          axios
-            .get(`${API_BASE}/users/${supabaseUser.id}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            })
-            .then((resp) => {
-              setUser(resp.data);
-              sessionStorage.setItem(LS_USER_KEY, JSON.stringify(resp.data));
-            })
-            .catch(() => {
-              // If backend fetch fails, still set minimal user from supabase
-              setUser({ id: supabaseUser.id, email: supabaseUser.email ?? "" });
-            })
-            .finally(() => setLoading(false));
+        if (session?.access_token) {
+          localStorage.setItem(LS_TOKEN_KEY, session.access_token);
+
+          // 2) Get backend profile
+          const uid = session.user?.id;
+          if (uid) {
+            const resp = await axios.get(`${API_BASE}/users/${uid}`, {
+              headers: { Authorization: `Bearer ${session.access_token}` },
+            });
+
+            setUser(resp.data);
+            localStorage.setItem(LS_USER_KEY, JSON.stringify(resp.data));
+          }
         } else {
-          setLoading(false);
+          // No supabase session — restore user from localStorage
+          const raw = localStorage.getItem(LS_USER_KEY);
+          if (raw) setUser(JSON.parse(raw));
         }
-      } else {
-        // If no supabase session, fallback to token + sessionStorage user
-        const raw = sessionStorage.getItem(LS_USER_KEY);
-        if (raw) {
-          setUser(JSON.parse(raw));
-        }
+      } catch (err) {
+        console.error("Restore session failed:", err);
+      } finally {
         setLoading(false);
       }
-    });
+    };
 
-    // subscribe to auth changes to keep token in sync
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        localStorage.setItem(LS_TOKEN_KEY, session.access_token);
-        const supabaseUser = session.user;
-        if (supabaseUser?.id) {
-          // fetch profile from backend
-          axios
-            .get(`${API_BASE}/users/${supabaseUser.id}`, {
-              headers: { Authorization: `Bearer ${session.access_token}` },
-            })
-            .then((resp) => {
-              setUser(resp.data);
-              sessionStorage.setItem(LS_USER_KEY, JSON.stringify(resp.data));
-            })
-            .catch(() => {
-              setUser({ id: supabaseUser.id, email: supabaseUser.email ?? "" });
-            });
+    restore();
+
+    /** ------------------------------------------------------
+     *  LISTEN TO AUTH CHANGES
+     * ------------------------------------------------------ */
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (session?.access_token) {
+          localStorage.setItem(LS_TOKEN_KEY, session.access_token);
+
+          const uid = session.user?.id;
+          if (uid) {
+            axios
+              .get(`${API_BASE}/users/${uid}`, {
+                headers: { Authorization: `Bearer ${session.access_token}` },
+              })
+              .then((resp) => {
+                setUser(resp.data);
+                localStorage.setItem(LS_USER_KEY, JSON.stringify(resp.data));
+              })
+              .catch(() => {
+                setUser({
+                  id: uid,
+                  email: session.user.email ?? "",
+                });
+              });
+          }
         } else {
+          // Logged out
+          localStorage.removeItem(LS_TOKEN_KEY);
+          localStorage.removeItem(LS_USER_KEY);
           setUser(null);
         }
-      } else {
-        localStorage.removeItem(LS_TOKEN_KEY);
-        sessionStorage.removeItem(LS_USER_KEY);
-        setUser(null);
       }
-    });
+    );
 
-    return () => {
-      listener?.subscription?.unsubscribe();
-    };
+    return () => listener?.subscription?.unsubscribe();
   }, []);
 
-  // Signup: uses Supabase then calls backend /profiles
+  /** ------------------------------------------------------
+   * SIGNUP
+   * ------------------------------------------------------ */
   const signup = async (
     name: string,
     username: string,
@@ -353,35 +360,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     contact_number_2?: string
   ) => {
     try {
-      // 1) create in supabase auth
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      const { data: signUpData, error: signUpError } =
+        await supabase.auth.signUp({ email, password });
+      if (signUpError) throw signUpError;
+
+      // Auto login
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-      if (signUpError) {
-        throw signUpError;
-      }
+      if (error || !data?.session) throw error || new Error("Auto login failed");
 
-      // 2) auto sign in to get session (signUp may not auto create a session in some configs)
-      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (loginError || !loginData?.session) {
-        throw loginError || new Error("Auto login failed");
-      }
+      const token = data.session.access_token;
+      const uid = data.user?.id;
+      if (!uid) throw new Error("Missing supabase user id");
 
-      const token = loginData.session.access_token;
-      const supabaseUser = loginData.user as SupabaseUser;
-      if (!supabaseUser?.id) {
-        throw new Error("Missing supabase user id");
-      }
-
-      // store token
       localStorage.setItem(LS_TOKEN_KEY, token);
 
-      // 3) call backend to create profile
-      const res = await axios.post(
+      // Call backend to create profile
+      const resp = await axios.post(
         `${API_BASE}/profiles`,
         {
           username,
@@ -393,88 +390,104 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           city,
           contact_number_2: contact_number_2 ?? null,
         },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // backend returns created user - store it
-      sessionStorage.setItem(LS_USER_KEY, JSON.stringify(res.data));
-      setUser(res.data);
-    } catch (error: any) {
-      // normalize error
-      console.error("Signup error", error);
-      throw new Error(error?.message || error?.response?.data?.detail || "Signup failed");
+      setUser(resp.data);
+      localStorage.setItem(LS_USER_KEY, JSON.stringify(resp.data));
+    } catch (err: any) {
+      console.error("Signup error:", err);
+      throw new Error(
+        err?.message || err?.response?.data?.detail || "Signup failed"
+      );
     }
   };
 
-  // Login: supabase login -> get token -> fetch backend user by supabase id
-  const login = async (loginInput: string, password: string) => {
+  /** ------------------------------------------------------
+   * LOGIN
+   * ------------------------------------------------------ */
+  const login = async (email: string, password: string) => {
     try {
-      // sign in using supabase (loginInput can be email/username/phone but supabase will only accept email by default)
-      // We assume users sign in with email here (as welcome.html)
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: loginInput,
+        email,
         password,
       });
-      if (error || !data?.session || !data.user) {
+      if (error || !data?.session || !data.user)
         throw error || new Error("Login failed");
-      }
 
       const token = data.session.access_token;
-      const supabaseUser = data.user as SupabaseUser;
-      if (!supabaseUser?.id) throw new Error("Missing supabase user id");
+      const uid = data.user.id;
 
       localStorage.setItem(LS_TOKEN_KEY, token);
 
-      // fetch profile from backend
-      const userResp = await axios.get(`${API_BASE}/users/${supabaseUser.id}`, {
+      const resp = await axios.get(`${API_BASE}/users/${uid}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      sessionStorage.setItem(LS_USER_KEY, JSON.stringify(userResp.data));
-      setUser(userResp.data);
-    } catch (error: any) {
-      console.error("Login error", error);
-      throw new Error(error?.message || error?.response?.data?.detail || "Login failed");
+      setUser(resp.data);
+      localStorage.setItem(LS_USER_KEY, JSON.stringify(resp.data));
+    } catch (err: any) {
+      console.error("Login error:", err);
+      throw new Error(
+        err?.message || err?.response?.data?.detail || "Login failed"
+      );
     }
   };
 
+  /** ------------------------------------------------------
+   * LOGOUT
+   * ------------------------------------------------------ */
   const logout = async () => {
     try {
       await supabase.auth.signOut();
-    } catch (e) {
-      // ignore
     } finally {
-      sessionStorage.removeItem(LS_USER_KEY);
+      localStorage.removeItem(LS_USER_KEY);
       localStorage.removeItem(LS_TOKEN_KEY);
       setUser(null);
     }
   };
 
+  /** ------------------------------------------------------
+   * REFRESH USER
+   * ------------------------------------------------------ */
   const refreshUser = async () => {
-    const token = localStorage.getItem(LS_TOKEN_KEY);
-    if (!token) throw new Error("Missing auth token");
-    // Try to extract supabase user id from session
-    const { data } = await supabase.auth.getSession();
-    const supabaseUserId = data.session?.user?.id;
-    if (!supabaseUserId) throw new Error("Missing supabase user id");
-    const userResp = await axios.get(`${API_BASE}/users/${supabaseUserId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    sessionStorage.setItem(LS_USER_KEY, JSON.stringify(userResp.data));
-    setUser(userResp.data);
+    try {
+      const token = localStorage.getItem(LS_TOKEN_KEY);
+      if (!token) throw new Error("Missing auth token");
+
+      const { data } = await supabase.auth.getSession();
+      const uid = data.session?.user?.id;
+      if (!uid) throw new Error("Missing supabase user id");
+
+      const resp = await axios.get(`${API_BASE}/users/${uid}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setUser(resp.data);
+      localStorage.setItem(LS_USER_KEY, JSON.stringify(resp.data));
+    } catch (err) {
+      console.error("Refresh user error:", err);
+    }
   };
 
   const value = useMemo(
-    () => ({ user, loading, signup, login, logout, refreshUser, supabaseClient: supabase }),
+    () => ({
+      user,
+      loading,
+      signup,
+      login,
+      logout,
+      refreshUser,
+      supabaseClient: supabase,
+    }),
     [user, loading]
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  );
 }
 
-// Hook to use Auth context
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");

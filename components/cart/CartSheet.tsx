@@ -1,460 +1,4 @@
-// // import { useState } from "react";
-// // import { API_BASE_URL } from "@/lib/api-config";
-// // import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-// // import { Button } from "@/components/ui/button";
-// // import { Input } from "@/components/ui/input";
-// // import { useCart } from "@/context/CartContext";
-// // import { formatPKR } from "@/lib/currency";
-// // import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-// // import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-// // import { Label } from "@/components/ui/label";
-// // import { useAuth } from "@/context/AuthContext";
-// // import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogAction } from "@/components/ui/alert-dialog";
-
-// // export function CartSheet() {
-// //   const { items, subtotal, updateQty, removeItem, clear } = useCart();
-// //   const { user } = useAuth();
-// //   const [open, setOpen] = useState(false);
-// //   const [payment, setPayment] = useState<"jazzcash" | "bank">("jazzcash");
-// //   const [showSuccess, setShowSuccess] = useState(false);
-
-// //   const advance = Math.round(subtotal * 0.5);
-
-// //   const onConfirm = async () => {
-// //     if (!user || items.length === 0) return;
-// //     const userId = parseInt(user.id, 10);
-// //     if (isNaN(userId)) {
-// //       console.error("Invalid user ID:", user.id);
-// //       alert("Invalid user ID. Please try again.");
-// //       return;
-// //     }
-
-// //     const orderData = {
-// //       user_id: userId,
-// //       order_time: new Date().toISOString().split("T")[0],
-// //     };
-
-// //     try {
-// //       const response = await fetch(`${API_BASE_URL}/orders/from-cart/`, {
-// //         method: "POST",
-// //         headers: {
-// //           "Content-Type": "application/json",
-// //         },
-// //         body: JSON.stringify(orderData),
-// //       });
-// //       if (!response.ok) {
-// //         const errorData = await response.json().catch(() => ({}));
-// //         throw new Error(errorData.detail || `Failed to create order: ${response.statusText}`);
-// //       }
-// //       await clear();
-// //       setOpen(false);
-// //       setShowSuccess(true);
-// //     } catch (error) {
-// //       console.error("Error creating order:", error);
-// //       alert(error.message || "Failed to place order. Please check stock or try again.");
-// //     }
-// //   };
-
-// //   return (
-// //     <>
-// //       <Sheet open={open} onOpenChange={setOpen}>
-// //         <SheetTrigger asChild>
-// //           <Button className="relative">
-// //             Cart
-// //             <span className="ml-2 rounded-full bg-accent text-accent-foreground px-2 text-xs">
-// //               {items.reduce((s, i) => s + i.qty, 0)}
-// //             </span>
-// //           </Button>
-// //         </SheetTrigger>
-// //         <SheetContent className="w-full sm:max-w-lg">
-// //           <SheetHeader>
-// //             <SheetTitle className="font-serif text-2xl">Your Cart</SheetTitle>
-// //           </SheetHeader>
-// //           <div className="mt-6 space-y-4">
-// //             {items.length === 0 ? (
-// //               <p className="text-muted-foreground">Your cart is empty.</p>
-// //             ) : (
-// //               items.map((item) => (
-// //                 <div key={`${item.id}-${item.size}`} className="flex gap-3 border rounded-lg p-3">
-// //                   <img src={item.image} alt={item.name} className="h-16 w-16 rounded object-cover" />
-// //                   <div className="flex-1">
-// //                     <div className="flex items-start justify-between gap-2">
-// //                       <div>
-// //                         <p className="font-medium">{item.name}</p>
-// //                         <p className="text-xs text-muted-foreground">{item.size ?? ""} {item.collection ? `· ${item.collection}` : ""}</p>
-// //                       </div>
-// //                       <button
-// //                         className="text-sm text-destructive"
-// //                         onClick={() => {
-// //                           console.log("Removing item:", { id: item.id, size: item.size });
-// //                           removeItem(item.id, item.size);
-// //                         }}
-// //                       >
-// //                         Remove
-// //                       </button>
-// //                     </div>
-// //                     <div className="mt-2 flex items-center justify-between">
-// //                       <div className="flex items-center gap-2">
-// //                         <Button
-// //                           className="bg-secondary text-secondary-foreground"
-// //                           onClick={() => updateQty(item.id, item.size!, Math.max(1, item.qty - 1))}
-// //                         >
-// //                           -
-// //                         </Button>
-// //                         <Input
-// //                           value={item.qty}
-// //                           onChange={(e) => updateQty(item.id, item.size!, Number(e.target.value) || 1)}
-// //                           className="w-16 text-center"
-// //                         />
-// //                         <Button
-// //                           className="bg-secondary text-secondary-foreground"
-// //                           onClick={() => updateQty(item.id, item.size!, item.qty + 1)}
-// //                         >
-// //                           +
-// //                         </Button>
-// //                       </div>
-// //                       <p className="font-medium">{formatPKR(item.price)}</p>
-// //                     </div>
-// //                   </div>
-// //                 </div>
-// //               ))
-// //             )}
-// //           </div>
-// //           <div className="mt-6 border-t pt-4 space-y-2">
-// //             <div className="flex justify-between text-sm">
-// //               <span>Subtotal</span>
-// //               <span className="font-medium">{formatPKR(subtotal)}</span>
-// //             </div>
-// //             <div className="flex justify-between text-sm">
-// //               <span>Advance (50%)</span>
-// //               <span className="font-medium">{formatPKR(advance)}</span>
-// //             </div>
-// //             <div className="flex justify-between text-sm">
-// //               <span>Remaining on Delivery</span>
-// //               <span className="font-medium">{formatPKR(Math.max(0, subtotal - advance))}</span>
-// //             </div>
-// //           </div>
-// //           <div className="mt-4 flex gap-2">
-// //             <Button
-// //               className="border border-input bg-background hover:bg-accent hover:text-accent-foreground"
-// //               onClick={clear}
-// //               disabled={items.length === 0}
-// //             >
-// //               Clear
-// //             </Button>
-// //             <Dialog>
-// //               <DialogTrigger asChild>
-// //                 <Button className="flex-1" disabled={!user || items.length === 0}>
-// //                   {user ? "Proceed to Checkout" : "Login to Checkout"}
-// //                 </Button>
-// //               </DialogTrigger>
-// //               <DialogContent>
-// //                 <DialogHeader>
-// //                   <DialogTitle className="font-serif">Confirm Advance Payment</DialogTitle>
-// //                 </DialogHeader>
-// //                 <div className="space-y-4">
-// //                   <p className="text-sm text-muted-foreground">Pay 50% advance to confirm your order. Select a method:</p>
-// //                   <RadioGroup value={payment} onValueChange={(v) => setPayment(v as any)} className="grid grid-cols-2 gap-3">
-// //                     <div className="flex items-center gap-2 border rounded-lg p-3">
-// //                       <RadioGroupItem value="jazzcash" id="jazz" />
-// //                       <Label htmlFor="jazz">JazzCash</Label>
-// //                     </div>
-// //                     <div className="flex items-center gap-2 border rounded-lg p-3">
-// //                       <RadioGroupItem value="bank" id="bank" />
-// //                       <Label htmlFor="bank">Bank Transfer</Label>
-// //                     </div>
-// //                   </RadioGroup>
-// //                   <div className="rounded-lg bg-secondary p-3 text-sm">
-// //                     <p className="font-medium">Amount to pay now: {formatPKR(advance)}</p>
-// //                     {payment === "jazzcash" ? (
-// //                       <p className="mt-2">Send to JazzCash number 03328425042 and share screenshot on WhatsApp. We will verify and update your order status.</p>
-// //                     ) : (
-// //                       <p className="mt-2">Transfer to Bank Account (shared after order confirmation). Email proof to itsmywork1019@gmail.com.</p>
-// //                     )}
-// //                   </div>
-// //                   <Button onClick={onConfirm} disabled={!user}>I have paid the advance</Button>
-// //                 </div>
-// //               </DialogContent>
-// //             </Dialog>
-// //           </div>
-// //         </SheetContent>
-// //       </Sheet>
-// //       <AlertDialog open={showSuccess} onOpenChange={(open) => {
-// //         setShowSuccess(open);
-// //         if (!open) window.location.reload();
-// //       }}>
-// //         <AlertDialogContent className="max-w-md mx-auto">
-// //           <AlertDialogHeader>
-// //             <AlertDialogTitle className="font-serif text-2xl text-center">Congratulations!</AlertDialogTitle>
-// //             <AlertDialogDescription className="text-center">
-// //               Your order has been successfully placed! We will verify your advance and update the status soon.
-// //             </AlertDialogDescription>
-// //           </AlertDialogHeader>
-// //           <AlertDialogAction className="mx-auto w-1/2">OK</AlertDialogAction>
-// //         </AlertDialogContent>
-// //       </AlertDialog>
-// //     </>
-// //   );
-// // }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import { useState } from "react";
-// import { API_BASE_URL } from "@/lib/api-config";
-// import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-// import { Button } from "@/components/ui/button";
-// import { Input } from "@/components/ui/input";
-// import { useCart } from "@/context/CartContext";
-// import { formatPKR } from "@/lib/currency";
-// import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-// import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-// import { Label } from "@/components/ui/label";
-// import { useAuth } from "@/context/AuthContext";
-// import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogAction } from "@/components/ui/alert-dialog";
-
-// export function CartSheet() {
-//   const { items, subtotal, updateQty, removeItem, clear } = useCart();
-//   const { user } = useAuth();
-//   const [open, setOpen] = useState(false);
-//   const [payment, setPayment] = useState<"jazzcash" | "bank">("jazzcash");
-//   const [showSuccess, setShowSuccess] = useState(false);
-
-//   const advance = Math.round(subtotal * 0.5);
-
-//   const onConfirm = async () => {
-//     if (!user || items.length === 0) return;
-//     const userId = parseInt(user.id, 10);
-//     if (isNaN(userId)) {
-//       console.error("Invalid user ID:", user.id);
-//       alert("Invalid user ID. Please try again.");
-//       return;
-//     }
-
-//     const orderData = {
-//       user_id: userId,
-//       order_time: new Date().toISOString().split("T")[0],
-//     };
-
-//     try {
-//       const response = await fetch(`${API_BASE_URL}/orders/from-cart/`, {
-//         method: "POST",
-//         headers: {
-//           "Content-Type": "application/json",
-//         },
-//         body: JSON.stringify(orderData),
-//       });
-//       if (!response.ok) {
-//         // Clone response before reading body to prevent body stream errors
-//         const cloned = response.clone();
-//         let errorData: any = {};
-//         try {
-//           errorData = await cloned.json();
-//         } catch (e) {
-//           console.warn("Could not parse order creation error body:", e);
-//         }
-//         throw new Error((errorData && (errorData.detail || errorData.message)) || `Failed to create order: ${response.statusText}`);
-//       }
-//       await clear();
-//       setOpen(false);
-//       setShowSuccess(true);
-//     } catch (error) {
-//       console.error("Error creating order:", error);
-//       alert(error.message || "Failed to place order. Please check stock or try again.");
-//     }
-//   };
-
-//   return (
-//     <>
-//       <Sheet open={open} onOpenChange={setOpen}>
-//         <SheetTrigger asChild>
-//           <Button className="relative">
-//             Cart
-//             <span className="ml-2 rounded-full bg-accent text-accent-foreground px-2 text-xs">
-//               {items.reduce((s, i) => s + i.qty, 0)}
-//             </span>
-//           </Button>
-//         </SheetTrigger>
-//         <SheetContent className="w-full sm:max-w-lg">
-//           <SheetHeader>
-//             <SheetTitle className="font-serif text-2xl">Your Cart</SheetTitle>
-//           </SheetHeader>
-//           <div className="mt-6 space-y-4">
-//             {items.length === 0 ? (
-//               <p className="text-muted-foreground">Your cart is empty.</p>
-//             ) : (
-//               items.map((item) => (
-//                 <div key={`${item.id}-${item.size}`} className="flex gap-3 border rounded-lg p-3">
-//                   <img src={item.image} alt={item.name} className="h-16 w-16 rounded object-cover" />
-//                   <div className="flex-1">
-//                     <div className="flex items-start justify-between gap-2">
-//                       <div>
-//                         <p className="font-medium">{item.name}</p>
-//                         <p className="text-xs text-muted-foreground">{item.size ?? ""} {item.collection ? `· ${item.collection}` : ""}</p>
-//                       </div>
-//                       <button
-//                         className="text-sm text-destructive"
-//                         onClick={() => {
-//                           console.log("Removing item:", { id: item.id, size: item.size });
-//                           removeItem(item.id, item.size);
-//                         }}
-//                       >
-//                         Remove
-//                       </button>
-//                     </div>
-//                     <div className="mt-2 flex items-center justify-between">
-//                       <div className="flex items-center gap-2">
-//                         <Button
-//                           className="bg-secondary text-secondary-foreground"
-//                           onClick={() => updateQty(item.id, item.size!, Math.max(1, item.qty - 1))}
-//                         >
-//                           -
-//                         </Button>
-//                         <Input
-//                           value={item.qty}
-//                           onChange={(e) => updateQty(item.id, item.size!, Number(e.target.value) || 1)}
-//                           className="w-16 text-center"
-//                         />
-//                         <Button
-//                           className="bg-secondary text-secondary-foreground"
-//                           onClick={() => updateQty(item.id, item.size!, item.qty + 1)}
-//                         >
-//                           +
-//                         </Button>
-//                       </div>
-//                       <p className="font-medium">{formatPKR(item.price)}</p>
-//                     </div>
-//                   </div>
-//                 </div>
-//               ))
-//             )}
-//           </div>
-//           <div className="mt-6 border-t pt-4 space-y-2">
-//             <div className="flex justify-between text-sm">
-//               <span>Subtotal</span>
-//               <span className="font-medium">{formatPKR(subtotal)}</span>
-//             </div>
-//             <div className="flex justify-between text-sm">
-//               <span>Advance (50%)</span>
-//               <span className="font-medium">{formatPKR(advance)}</span>
-//             </div>
-//             <div className="flex justify-between text-sm">
-//               <span>Remaining on Delivery</span>
-//               <span className="font-medium">{formatPKR(Math.max(0, subtotal - advance))}</span>
-//             </div>
-//           </div>
-//           <div className="mt-4 flex gap-2">
-//             <Button
-//               className="border border-input bg-background hover:bg-accent hover:text-accent-foreground"
-//               onClick={clear}
-//               disabled={items.length === 0}
-//             >
-//               Clear
-//             </Button>
-//             <Dialog>
-//               <DialogTrigger asChild>
-//                 <Button className="flex-1" disabled={!user || items.length === 0}>
-//                   {user ? "Proceed to Checkout" : "Login to Checkout"}
-//                 </Button>
-//               </DialogTrigger>
-//               <DialogContent>
-//                 <DialogHeader>
-//                   <DialogTitle className="font-serif">Confirm Advance Payment</DialogTitle>
-//                 </DialogHeader>
-//                 <div className="space-y-4">
-//                   <p className="text-sm text-muted-foreground">Pay 50% advance to confirm your order. Select a method:</p>
-//                   <RadioGroup value={payment} onValueChange={(v) => setPayment(v as any)} className="grid grid-cols-2 gap-3">
-//                     <div className="flex items-center gap-2 border rounded-lg p-3">
-//                       <RadioGroupItem value="jazzcash" id="jazz" />
-//                       <Label htmlFor="jazz">JazzCash</Label>
-//                     </div>
-//                     <div className="flex items-center gap-2 border rounded-lg p-3">
-//                       <RadioGroupItem value="bank" id="bank" />
-//                       <Label htmlFor="bank">Bank Transfer</Label>
-//                     </div>
-//                   </RadioGroup>
-//                   <div className="rounded-lg bg-secondary p-3 text-sm">
-//                     <p className="font-medium">Amount to pay now: {formatPKR(advance)}</p>
-//                     {payment === "jazzcash" ? (
-//                       <p className="mt-2">Send to JazzCash number 03328425042 and share screenshot on WhatsApp. We will verify and update your order status.</p>
-//                     ) : (
-//                       <p className="mt-2">Transfer to Bank Account (shared after order confirmation). Email proof to itsmywork1019@gmail.com.</p>
-//                     )}
-//                   </div>
-//                   <Button onClick={onConfirm} disabled={!user}>I have paid the advance</Button>
-//                 </div>
-//               </DialogContent>
-//             </Dialog>
-//           </div>
-//         </SheetContent>
-//       </Sheet>
-//       <AlertDialog open={showSuccess} onOpenChange={(open) => {
-//         setShowSuccess(open);
-//         if (!open) window.location.reload();
-//       }}>
-//         <AlertDialogContent className="max-w-md mx-auto">
-//           <AlertDialogHeader>
-//             <AlertDialogTitle className="font-serif text-2xl text-center">Congratulations!</AlertDialogTitle>
-//             <AlertDialogDescription className="text-center">
-//               Your order has been successfully placed! We will verify your advance and update the status soon.
-//             </AlertDialogDescription>
-//           </AlertDialogHeader>
-//           <AlertDialogAction className="mx-auto w-1/2">OK</AlertDialogAction>
-//         </AlertDialogContent>
-//       </AlertDialog>
-//     </>
-//   );
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// CartSheet.tsx
 import { useState } from "react";
 import { API_BASE_URL } from "@/lib/api-config";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -462,63 +6,79 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCart } from "@/context/CartContext";
 import { formatPKR } from "@/lib/currency";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogAction } from "@/components/ui/alert-dialog";
+import { C } from "vitest/dist/chunks/reporters.d.BFLkQcL6.js";
+
+//
+// Read Supabase token
+//
+function getAccessToken() {
+  try {
+    const key = Object.keys(localStorage).find((k) => k.includes("-auth-token"));
+    if (!key) return null;
+
+    const session = JSON.parse(localStorage.getItem(key)!);
+    return session?.access_token || null;
+  } catch {
+    return null;
+  }
+}
 
 export function CartSheet() {
-  const { items, subtotal, updateQty, removeItem, clear } = useCart();
+  const { items, subtotal, updateQty, removeItem, deliveryCharge } = useCart();
   const { user } = useAuth();
+
   const [open, setOpen] = useState(false);
   const [payment, setPayment] = useState<"jazzcash" | "bank">("jazzcash");
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const totalProducts = items.reduce((sum, item) => sum + item.qty, 0);
-  const deliveryCharge = totalProducts < 3 ? 300 : 0;
+  const totalProducts = items.reduce((sum, i) => sum + i.qty, 0);
   const totalWithDelivery = subtotal + deliveryCharge;
   const advance = Math.round(totalWithDelivery * 0.25);
 
+  //
+  // Confirm Order
+  //
   const onConfirm = async () => {
     if (!user || items.length === 0) return;
-    const userId = parseInt(user.id, 10);
-    if (isNaN(userId)) {
-      console.error("Invalid user ID:", user.id);
-      alert("Invalid user ID. Please try again.");
+
+    const token = getAccessToken();
+    if (!token) {
+      alert("Missing access token.");
       return;
     }
 
     const orderData = {
-      user_id: userId,
-      order_time: new Date().toISOString().split("T")[0],
+      user_id: user.id,
+      order_time: new Date().toISOString(),
     };
 
     try {
-      const response = await fetch(`${API_BASE_URL}/orders/from-cart/`, {
+      const res = await fetch(`${API_BASE_URL}/orders/from-cart/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
         },
         body: JSON.stringify(orderData),
       });
-      if (!response.ok) {
-        // Clone response before reading body to prevent body stream errors
-        const cloned = response.clone();
-        let errorData: any = {};
-        try {
-          errorData = await cloned.json();
-        } catch (e) {
-          console.warn("Could not parse order creation error body:", e);
-        }
-        throw new Error((errorData && (errorData.detail || errorData.message)) || `Failed to create order: ${response.statusText}`);
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || "Order failed");
       }
-      await clear();
+
       setOpen(false);
       setShowSuccess(true);
-    } catch (error) {
-      console.error("Error creating order:", error);
-      alert(error.message || "Failed to place order. Please check stock or try again.");
+      window.location.reload();
+    } catch (e: any) {
+      console.error("Order error:", e);
+      alert(e.message);
     }
   };
 
@@ -533,10 +93,12 @@ export function CartSheet() {
             </span>
           </Button>
         </SheetTrigger>
+
         <SheetContent className="w-full sm:max-w-lg">
           <SheetHeader>
             <SheetTitle className="font-serif text-2xl">Your Cart</SheetTitle>
           </SheetHeader>
+
           <div className="mt-6 space-y-4">
             {items.length === 0 ? (
               <p className="text-muted-foreground">Your cart is empty.</p>
@@ -544,152 +106,193 @@ export function CartSheet() {
               items.map((item) => (
                 <div key={`${item.id}-${item.size}`} className="flex gap-3 border rounded-lg p-3">
                   <img src={item.image} alt={item.name} className="h-16 w-16 rounded object-cover" />
+
                   <div className="flex-1">
-                    <div className="flex items-start justify-between gap-2">
+                    <div className="flex justify-between">
                       <div>
                         <p className="font-medium">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">{item.size ?? ""} {item.collection ? `· ${item.collection}` : ""}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.size} · {item.collection}
+                        </p>
+                        {item.color && (
+                          <p className="text-xs text-muted-foreground">Color: {item.color}</p>
+                        )}
+
                       </div>
+
                       <button
                         className="text-sm text-destructive"
-                        onClick={() => {
-                          console.log("Removing item:", { id: item.id, size: item.size });
-                          removeItem(item.id, item.size);
-                        }}
+                        onClick={() => removeItem(item.id, item.size, item.color ?? null)}
                       >
                         Remove
                       </button>
                     </div>
-                    <div className="mt-2 flex items-center justify-between">
+
+                    <div className="mt-2 flex justify-between items-center">
                       <div className="flex items-center gap-2">
                         <Button
                           className="bg-secondary text-secondary-foreground"
-                          onClick={() => updateQty(item.id, item.size!, Math.max(1, item.qty - 1))}
+                          onClick={() => updateQty(item.id, item.size, item.color ?? null, Math.max(1, item.qty - 1))}
                         >
                           -
                         </Button>
+
                         <Input
                           value={item.qty}
-                          onChange={(e) => updateQty(item.id, item.size!, Number(e.target.value) || 1)}
+                          onChange={(e) =>
+                            updateQty(item.id, item.size, item.color ?? null, Number(e.target.value) || 1)
+                          }
                           className="w-16 text-center"
                         />
+
                         <Button
                           className="bg-secondary text-secondary-foreground"
-                          onClick={() => updateQty(item.id, item.size!, item.qty + 1)}
+                          onClick={() => updateQty(item.id, item.size, item.color ?? null, item.qty + 1)}
                         >
                           +
                         </Button>
                       </div>
-                      <p className="font-medium">{formatPKR(item.price)}</p>
+
+                      <p className="font-medium">
+                        {item.discount && item.discount > 0 ? (
+                          <>
+                            <span className="line-through text-muted-foreground mr-1">
+                              {formatPKR(item.price)}
+                            </span>
+                            <span>
+                              {formatPKR(item.price - (item.price * item.discount) / 100)}
+                            </span>
+                          </>
+                        ) : (
+                          formatPKR(item.price)
+                        )}
+                      </p>
+
                     </div>
                   </div>
                 </div>
               ))
             )}
           </div>
-          <div className="mt-6 border-t pt-4 space-y-2">
+
+          {/* FREE DELIVERY OFFER */}
+<div className="p-4 rounded-xl border border-purple-300 bg-gradient-to-r from-purple-50 to-purple-100 shadow-sm">
+  <div className="flex items-start gap-3">
+    <span className="text-purple-600 text-xl">✨</span>
+    <div className="text-purple-700 text-sm leading-relaxed">
+      <strong className="font-semibold text-purple-800">Special Offer!</strong><br />
+      Buy <strong>3 or more products</strong> OR spend over <strong>Rs 5,000</strong>  
+      to enjoy <span className="underline font-semibold">Free Delivery</span> 🚚
+    </div>
+  </div>
+</div>
+
+
+
+          {/* Summary */}
+          <div className="mt-4 border-t pt-4 space-y-2">
             <div className="flex justify-between text-sm">
               <span>Subtotal</span>
-              <span className="font-medium">{formatPKR(subtotal)}</span>
+              <span>{formatPKR(subtotal)}</span>
             </div>
+
             {deliveryCharge > 0 && (
               <div className="flex justify-between text-sm text-orange-600">
                 <span>Delivery Charge</span>
-                <span className="font-medium">{formatPKR(deliveryCharge)}</span>
+                <span>{formatPKR(deliveryCharge)}</span>
               </div>
             )}
-            <div className="flex justify-between text-sm font-semibold border-t pt-2">
+
+            <div className="font-semibold flex justify-between text-sm border-t pt-2">
               <span>Total</span>
               <span>{formatPKR(totalWithDelivery)}</span>
             </div>
-            {deliveryCharge > 0 && (
-              <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-xs text-amber-900">
-                  ✨ <strong>Buy 3 or more product to get FREE DELIVERY!</strong>
-                </p>
-              </div>
-            )}
+
             <div className="flex justify-between text-sm">
               <span>Advance (25%)</span>
-              <span className="font-medium">{formatPKR(advance)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span>Remaining on Delivery</span>
-              <span className="font-medium">{formatPKR(Math.max(0, totalWithDelivery - advance))}</span>
+              <span>{formatPKR(advance)}</span>
             </div>
           </div>
+
+          {/* Checkout */}
           <div className="mt-4 flex gap-2">
-            <Button
-              className="border border-input bg-background hover:bg-accent hover:text-accent-foreground"
-              onClick={clear}
-              disabled={items.length === 0}
-            >
-              Clear
-            </Button>
             <Dialog>
               <DialogTrigger asChild>
                 <Button className="flex-1" disabled={!user || items.length === 0}>
-                  {user ? "Proceed to Checkout" : "Login to Checkout"}
+                  Proceed to Checkout
                 </Button>
               </DialogTrigger>
+
               <DialogContent>
+
                 <DialogHeader>
-                  <DialogTitle className="font-serif">Confirm Advance Payment</DialogTitle>
+                  <DialogTitle className="text-lg font-semibold text-center">
+                    Confirm Advance Payment
+                  </DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4">
-                  <div className="rounded-lg bg-slate-50 p-3 text-sm space-y-2">
-                    <div className="flex justify-between">
-                      <span>Subtotal</span>
-                      <span className="font-medium">{formatPKR(subtotal)}</span>
-                    </div>
-                    {deliveryCharge > 0 && (
-                      <div className="flex justify-between text-orange-600">
-                        <span>Delivery Charge</span>
-                        <span className="font-medium">{formatPKR(deliveryCharge)}</span>
-                      </div>
-                    )}
-                    <div className="border-t pt-2 flex justify-between font-semibold">
-                      <span>Total</span>
-                      <span>{formatPKR(totalWithDelivery)}</span>
-                    </div>
+              
+                <div className="space-y-3 mt-2">
+              
+                  {/* Amount Box */}
+                  <div className="border rounded-md p-3 bg-muted text-center">
+                    <p className="text-sm text-muted-foreground">Amount to Pay Now</p>
+                    <p className="text-xl font-bold">Rs {advance}</p>
                   </div>
-                  <p className="text-sm text-muted-foreground">Pay 25% advance to confirm your order. Select a method:</p>
-                  <RadioGroup value={payment} onValueChange={(v) => setPayment(v as any)} className="grid grid-cols-2 gap-3">
-                    <div className="flex items-center gap-2 border rounded-lg p-3">
-                      <RadioGroupItem value="jazzcash" id="jazz" />
-                      <Label htmlFor="jazz">JazzCash</Label>
-                    </div>
-                    <div className="flex items-center gap-2 border rounded-lg p-3">
-                      <RadioGroupItem value="bank" id="bank" />
-                      <Label htmlFor="bank">Bank Transfer</Label>
-                    </div>
-                  </RadioGroup>
-                  <div className="rounded-lg bg-secondary p-3 text-sm">
-                    <p className="font-medium">Amount to pay now: {formatPKR(advance)}</p>
-                    {payment === "jazzcash" ? (
-                      <p className="mt-2">Send to JazzCash number 03240405762 (MARIYEM NABEEL) and share screenshot on WhatsApp. We will verify and update your order status.</p>
-                    ) : (
-                      <p className="mt-2">Transfer to Bank Account Bank AL Habib: PK03BAHL5509008101070301 (Maryam nabeel). Email proof to rangistaarttowear@gmail.com. Alternatively you can send screenshot on WhatsApp.</p>
-                    )}
+              
+                  {/* Plain Instructions */}
+                  <div className="text-sm space-y-2 leading-relaxed">
+              
+                    <p>
+                      Please send the advance payment to the following account and 
+                      share the screenshot on WhatsApp or email. 
+                      Your order status will be updated within <strong>1 hour</strong>.
+                    </p>
+              
+                    <p>
+                      <strong>JazzCash:</strong> 0324-0405762 (MARIYEM NABEEL)
+                    </p>
+              
+                    <p>
+                      <strong>Bank Transfer (Bank AL Habib):</strong><br />
+                      PK03BAHL5509008101070301 (Maryam Nabeel)
+                    </p>
+              
+                    <p>
+                      <strong>Email proof:</strong> rangistaarttowear@gmail.com
+                    </p>
+              
+                    <p className="text-muted-foreground">
+                      You can view your order and payment status anytime in the <strong>Orders</strong> page.
+                    </p>
+              
                   </div>
-                  <Button onClick={onConfirm} disabled={!user}>I have paid the advance</Button>
+              
                 </div>
+              
+                <DialogFooter>
+                  <Button onClick={onConfirm} className="w-full">
+                    I will pay
+                  </Button>
+                </DialogFooter>
+              
               </DialogContent>
+
             </Dialog>
           </div>
         </SheetContent>
       </Sheet>
-      <AlertDialog open={showSuccess} onOpenChange={(open) => {
-        setShowSuccess(open);
-        if (!open) window.location.reload();
-      }}>
-        <AlertDialogContent className="max-w-md mx-auto">
+
+      <AlertDialog open={showSuccess} onOpenChange={setShowSuccess}>
+        <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-serif text-2xl text-center">Congratulations!</AlertDialogTitle>
+            <AlertDialogTitle className="font-serif text-xl text-center">
+              Order Placed Successfully!
+            </AlertDialogTitle>
             <AlertDialogDescription className="text-center">
-              Your order has been successfully placed! We will verify your advance and update the status soon.
+              We have received your advance payment. Your order is now under verification.
             </AlertDialogDescription>
           </AlertDialogHeader>
+
           <AlertDialogAction className="mx-auto w-1/2">OK</AlertDialogAction>
         </AlertDialogContent>
       </AlertDialog>

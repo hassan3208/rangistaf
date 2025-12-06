@@ -4,6 +4,7 @@ export type StoredUser = {
   id: string;
   name: string;
   email: string;
+  username?: string;
   password?: string; // optional since API might not return password
 };
 

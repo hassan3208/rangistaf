@@ -668,6 +668,7 @@ const heroImages = [
   "https://kinoqnxhesqzhvstrxtn.supabase.co/storage/v1/object/sign/product%20images/GUL%20PARI%20RANGISTA%20LANDING%20PAGE%201-01.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8yN2EzNThlOS1hZDQzLTQ4ZGEtYjAzYy04OWJhOTc0MDRkOTciLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJwcm9kdWN0IGltYWdlcy9HVUwgUEFSSSBSQU5HSVNUQSBMQU5ESU5HIFBBR0UgMS0wMS5qcGciLCJpYXQiOjE3NjMyNDQ1OTYsImV4cCI6MTc5NDc4MDU5Nn0.LIlbhpivAfExeJIUE9wfYEUYg4ECEsxHDsUoTgaA3V0",
 ];
 
+
 export default function Index() {
   const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
 
@@ -826,6 +827,12 @@ export default function Index() {
                     name={p.name}
                     image={p.image}
                     collection={p.collection as "✨ Bestsellers Edit" | "🌸 New Arrivals" | "❄ Winter Wonders" | "☀ Summer Bloom" | "💍 The Wedding Season" | "🌙 Eid Collection" | "🐐 Bakra Eid Edit" | "Azadi Collection" | "👩‍🍼 Mommy & Me" | "👗 Adults Collection" | "🎨 Handpainted Dupattas Collection"}
+
+
+                    category={p.category}      // ⭐ NEW
+                    discount={p.discount}      // ⭐ NEW
+                    colors={p.colors}          // ⭐ NEW
+
                     total_reviews={p.total_reviews}
                     average_rating={p.average_rating}
                     XS_price={p.XS_price}
@@ -863,6 +870,12 @@ export default function Index() {
                     name={p.name}
                     image={p.image}
                     collection={p.collection as "✨ Bestsellers Edit" | "🌸 New Arrivals" | "❄ Winter Wonders" | "☀ Summer Bloom" | "💍 The Wedding Season" | "🌙 Eid Collection" | "🐐 Bakra Eid Edit" | "Azadi Collection" | "👩‍🍼 Mommy & Me" | "👗 Adults Collection" | "🎨 Handpainted Dupattas Collection"}
+                    
+                    
+                    category={p.category}      // ⭐ NEW
+                    discount={p.discount}      // ⭐ NEW
+                    colors={p.colors}          // ⭐ NEW
+
                     total_reviews={p.total_reviews}
                     average_rating={p.average_rating}
                     XS_price={p.XS_price}
@@ -900,6 +913,11 @@ export default function Index() {
                     name={p.name}
                     image={p.image}
                     collection={p.collection as "✨ Bestsellers Edit" | "🌸 New Arrivals" | "❄ Winter Wonders" | "☀ Summer Bloom" | "💍 The Wedding Season" | "🌙 Eid Collection" | "🐐 Bakra Eid Edit" | "Azadi Collection" | "👩‍🍼 Mommy & Me" | "👗 Adults Collection" | "🎨 Handpainted Dupattas Collection"}
+                    
+                    
+                    category={p.category}      // ⭐ NEW
+                    discount={p.discount}      // ⭐ NEW
+                    colors={p.colors}          // ⭐ NEW
                     total_reviews={p.total_reviews}
                     average_rating={p.average_rating}
                     XS_price={p.XS_price}

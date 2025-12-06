@@ -190,6 +190,7 @@ export interface OrderResponse {
   total_price: number; // Added total_price
   products: OrderProduct[];
   order_time: string;
+  color?: string | null;
 }
 
 export interface OrderUpdate {

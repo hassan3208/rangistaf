@@ -177,7 +177,7 @@ export default function Admin() {
       image: "",
       images: [],
       collection: "",
-      category: "Uncategorized",
+      category: "hp",
       description: "",
       colors: [],
       discount: "0",
@@ -336,7 +336,7 @@ export default function Admin() {
         images: productForm.images && productForm.images.length ? productForm.images.filter(Boolean) : [],
         collection: productForm.collection.trim(),
         description: productForm.description || "",
-        category: productForm.category || "Uncategorized",
+        category: productForm.category || "hp",
         colors: (productForm.colors && productForm.colors.length) ? productForm.colors : [],
         discount: productForm.discount ? Number(productForm.discount) : 0,
 
@@ -405,7 +405,7 @@ export default function Admin() {
         image: data.image ?? "",
         images: data.images ?? [],
         collection: data.collection ?? "",
-        category: data.category ?? "Uncategorized",
+        category: data.category ?? "hp",
         description: data.description ?? "",
         colors: Array.isArray(data.colors) ? data.colors : data.colors ? String(data.colors).split(",") : [],
         discount: data.discount != null ? String(data.discount) : "0",
@@ -442,7 +442,7 @@ export default function Admin() {
         images: productForm.images && productForm.images.length ? productForm.images.filter(Boolean) : [],
         collection: productForm.collection.trim(),
         description: productForm.description || "",
-        category: productForm.category || "Uncategorized",
+        category: productForm.category || "hp",
         colors: (productForm.colors && productForm.colors.length) ? productForm.colors : [],
         discount: productForm.discount ? Number(productForm.discount) : 0,
 
@@ -736,144 +736,343 @@ export default function Admin() {
           <>
             <h2 className="font-serif text-2xl">Add Product</h2>
             <p className="text-sm text-muted-foreground">Add a new product to the catalog. Required: id, name, image, collection.</p>
-
+        
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Product ID *</Label>
                 <Input value={productForm.id} onChange={(e) => updateProductField("id", e.target.value)} />
+        
                 <Label>Product Name *</Label>
                 <Input value={productForm.name} onChange={(e) => updateProductField("name", e.target.value)} />
+        
                 <Label>Primary Image URL *</Label>
                 <Input value={productForm.image} onChange={(e) => updateProductField("image", e.target.value)} />
+        
                 <Label>Collection *</Label>
                 <Select value={productForm.collection} onValueChange={(v) => updateProductField("collection", v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select collection" />
                   </SelectTrigger>
                   <SelectContent>
-                    {COLLECTIONS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    {COLLECTIONS.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-
+        
                 <Label>Category</Label>
-                <Input value={productForm.category} onChange={(e) => updateProductField("category", e.target.value)} placeholder="Uncategorized" />
-
-                <Label>Colors (comma separated)</Label>
-                <Input value={productForm.colors.join(", ")} onChange={(e) => updateProductField("colors", e.target.value.split(",").map(s => s.trim()).filter(Boolean))} />
-
+                <Input
+                  value={productForm.category}
+                  onChange={(e) => updateProductField("category", e.target.value)}
+                  placeholder="HP"
+                />
+        
+                {/* COLORS SECTION - ONE BY ONE */}
+                <Label>Colors</Label>
+                <div className="space-y-2">
+                  {productForm.colors.map((c, idx) => (
+                    <div key={idx} className="flex gap-2 items-center">
+                      <Input
+                        value={c}
+                        onChange={(e) =>
+                          updateProductField(
+                            "colors",
+                            productForm.colors.map((x, i) => (i === idx ? e.target.value : x))
+                          )
+                        }
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          updateProductField(
+                            "colors",
+                            productForm.colors.filter((_, i) => i !== idx)
+                          )
+                        }
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      updateProductField("colors", [...productForm.colors, ""])
+                    }
+                  >
+                    <Plus className="w-3 h-3" /> Add Color
+                  </Button>
+                </div>
+        
                 <Label>Discount (%)</Label>
-                <Input type="number" value={productForm.discount} onChange={(e) => updateProductField("discount", e.target.value)} />
+                <Input
+                  type="number"
+                  value={productForm.discount}
+                  onChange={(e) => updateProductField("discount", e.target.value)}
+                />
               </div>
-
+        
               <div className="space-y-2">
                 <Label>Description</Label>
-                <Textarea value={productForm.description} onChange={(e) => updateProductField("description", e.target.value)} rows={4} />
+                <Textarea
+                  value={productForm.description}
+                  onChange={(e) => updateProductField("description", e.target.value)}
+                  rows={4}
+                />
+        
                 <Label>Additional Images</Label>
                 <div className="space-y-2">
                   {productForm.images.map((img, idx) => (
                     <div key={idx} className="flex gap-2 items-center">
                       <Input value={img} onChange={(e) => updateImageAt(idx, e.target.value)} />
-                      <Button variant="outline" size="sm" onClick={() => removeImageAt(idx)}><X className="w-4 h-4" /></Button>
+                      <Button variant="outline" size="sm" onClick={() => removeImageAt(idx)}>
+                        <X className="w-4 h-4" />
+                      </Button>
                     </div>
                   ))}
-                  <Button variant="outline" size="sm" onClick={addImageSlot}><Plus className="w-3 h-3" /> Add Image</Button>
+                  <Button variant="outline" size="sm" onClick={addImageSlot}>
+                    <Plus className="w-3 h-3" /> Add Image
+                  </Button>
                 </div>
-
+        
                 <Label>Prices (PKR)</Label>
                 <div className="grid grid-cols-3 gap-2">
-                  {(["XS","S","M","L","XL","XXL"] as const).map(sz => (
-                    <Input key={sz} placeholder={`${sz} price`} value={productForm[`${sz}_price` as keyof ProductFormData] as string} onChange={(e) => updateProductField(`${sz}_price` as keyof ProductFormData, e.target.value)} />
+                  {(["XS", "S", "M", "L", "XL", "XXL"] as const).map((sz) => (
+                    <Input
+                      key={sz}
+                      type="number"
+                      placeholder={`${sz} price`}
+                      value={productForm[`${sz}_price`]}
+                      onChange={(e) =>
+                        updateProductField(`${sz}_price`, e.target.value)
+                      }
+                    />
                   ))}
                 </div>
-
+        
                 <Label>Stock (Qty)</Label>
                 <div className="grid grid-cols-3 gap-2">
-                  {(["XS","S","M","L","XL","XXL"] as const).map(sz => (
-                    <Input key={sz+"s"} placeholder={`${sz} stock`} value={productForm[`${sz}_stock` as keyof ProductFormData] as string} onChange={(e) => updateProductField(`${sz}_stock` as keyof ProductFormData, e.target.value)} />
+                  {(["XS", "S", "M", "L", "XL", "XXL"] as const).map((sz) => (
+                    <Input
+                      key={sz}
+                      type="number"
+                      placeholder={`${sz} stock`}
+                      value={productForm[`${sz}_stock`] || "30"} // Default stock 30
+                      onChange={(e) =>
+                        updateProductField(`${sz}_stock`, e.target.value)
+                      }
+                    />
                   ))}
                 </div>
-
+        
                 <div className="flex items-center gap-2 mt-2">
-                  <Checkbox checked={productForm.kids} onCheckedChange={(v) => updateProductField("kids", !!v)} />
+                  <Checkbox
+                    checked={productForm.kids}
+                    onCheckedChange={(v) => updateProductField("kids", !!v)}
+                  />
                   <Label>Kids product</Label>
                 </div>
-
+        
                 <div className="flex gap-2 mt-4">
-                  <Button onClick={handleAddProduct} disabled={loadingProduct}>{loadingProduct ? "Adding..." : "Add Product"}</Button>
-                  <Button variant="outline" onClick={() => setProductForm(defaultProductForm())}>Reset</Button>
+                  <Button onClick={handleAddProduct} disabled={loadingProduct}>
+                    {loadingProduct ? "Adding..." : "Add Product"}
+                  </Button>
+                  <Button variant="outline" onClick={() => setProductForm(defaultProductForm())}>
+                    Reset
+                  </Button>
                 </div>
               </div>
             </div>
           </>
         )}
 
+
         {tab === "edit" && (
           <>
             <h2 className="font-serif text-2xl">Edit Product</h2>
-            <p className="text-sm text-muted-foreground">Enter product ID to load and edit. All fields editable.</p>
-
+            <p className="text-sm text-muted-foreground">
+              Enter product ID to load and edit. All fields editable.
+            </p>
+        
             <div className="mt-4 flex gap-2">
-              <Input value={productIdInput} placeholder="Product ID" onChange={(e) => setProductIdInput(e.target.value)} />
-              <Button onClick={() => handleLoadProductForEdit(productIdInput)}>Load</Button>
-              <Button variant="outline" onClick={() => { setProductForm(defaultProductForm()); setProductIdInput(""); }}>Clear</Button>
+              <Input
+                value={productIdInput}
+                placeholder="Product ID"
+                onChange={(e) => setProductIdInput(e.target.value)}
+              />
+              <Button onClick={() => handleLoadProductForEdit(productIdInput)}>
+                Load
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setProductForm(defaultProductForm());
+                  setProductIdInput("");
+                }}
+              >
+                Clear
+              </Button>
             </div>
-
+        
             {productForm.id && (
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Editing ID</Label>
                   <Input value={productForm.id} disabled />
+        
                   <Label>Product Name</Label>
-                  <Input value={productForm.name} onChange={(e) => updateProductField("name", e.target.value)} />
+                  <Input
+                    value={productForm.name}
+                    onChange={(e) => updateProductField("name", e.target.value)}
+                  />
+        
                   <Label>Primary Image</Label>
-                  <Input value={productForm.image} onChange={(e) => updateProductField("image", e.target.value)} />
+                  <Input
+                    value={productForm.image}
+                    onChange={(e) => updateProductField("image", e.target.value)}
+                  />
+        
                   <Label>Collection</Label>
-                  <Input value={productForm.collection} onChange={(e) => updateProductField("collection", e.target.value)} />
+                  <Input
+                    value={productForm.collection}
+                    onChange={(e) => updateProductField("collection", e.target.value)}
+                  />
+        
                   <Label>Category</Label>
-                  <Input value={productForm.category} onChange={(e) => updateProductField("category", e.target.value)} />
+                  <Input
+                    value={productForm.category}
+                    onChange={(e) => updateProductField("category", e.target.value)}
+                  />
+        
+                  {/* COLORS SECTION - ONE BY ONE */}
+                  <Label>Colors</Label>
+                  <div className="space-y-2">
+                    {productForm.colors.map((c, idx) => (
+                      <div key={idx} className="flex gap-2 items-center">
+                        <Input
+                          value={c}
+                          onChange={(e) =>
+                            updateProductField(
+                              "colors",
+                              productForm.colors.map((x, i) =>
+                                i === idx ? e.target.value : x
+                              )
+                            )
+                          }
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            updateProductField(
+                              "colors",
+                              productForm.colors.filter((_, i) => i !== idx)
+                            )
+                          }
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        updateProductField("colors", [...productForm.colors, ""])
+                      }
+                    >
+                      <Plus className="w-3 h-3" /> Add Color
+                    </Button>
+                  </div>
                 </div>
-
+        
                 <div className="space-y-2">
                   <Label>Description</Label>
-                  <Textarea value={productForm.description} onChange={(e) => updateProductField("description", e.target.value)} rows={4} />
-                  <Label>Colors</Label>
-                  <Input value={productForm.colors.join(", ")} onChange={(e) => updateProductField("colors", e.target.value.split(",").map(s => s.trim()).filter(Boolean))} />
+                  <Textarea
+                    value={productForm.description}
+                    onChange={(e) => updateProductField("description", e.target.value)}
+                    rows={4}
+                  />
+        
                   <Label>Discount (%)</Label>
-                  <Input type="number" value={productForm.discount} onChange={(e) => updateProductField("discount", e.target.value)} />
+                  <Input
+                    type="number"
+                    value={productForm.discount}
+                    onChange={(e) => updateProductField("discount", e.target.value)}
+                  />
+        
                   <Label>Images</Label>
                   <div className="space-y-2">
                     {productForm.images.map((img, idx) => (
                       <div key={idx} className="flex gap-2 items-center">
-                        <Input value={img} onChange={(e) => updateImageAt(idx, e.target.value)} />
-                        <Button variant="outline" size="sm" onClick={() => removeImageAt(idx)}><X className="w-4 h-4" /></Button>
+                        <Input
+                          value={img}
+                          onChange={(e) => updateImageAt(idx, e.target.value)}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removeImageAt(idx)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
                       </div>
                     ))}
-                    <Button variant="outline" size="sm" onClick={addImageSlot}><Plus className="w-3 h-3" /> Add Image</Button>
+                    <Button variant="outline" size="sm" onClick={addImageSlot}>
+                      <Plus className="w-3 h-3" /> Add Image
+                    </Button>
                   </div>
-
+        
                   <Label>Prices</Label>
                   <div className="grid grid-cols-3 gap-2">
-                    {(["XS","S","M","L","XL","XXL"] as const).map(sz => (
-                      <Input key={sz+"pe"} value={productForm[`${sz}_price` as keyof ProductFormData] as string} onChange={(e) => updateProductField(`${sz}_price` as keyof ProductFormData, e.target.value)} />
+                    {(["XS", "S", "M", "L", "XL", "XXL"] as const).map((sz) => (
+                      <Input
+                        key={sz}
+                        type="number"
+                        value={productForm[`${sz}_price`]}
+                        onChange={(e) =>
+                          updateProductField(`${sz}_price`, e.target.value)
+                        }
+                      />
                     ))}
                   </div>
-
+        
                   <Label>Stocks</Label>
                   <div className="grid grid-cols-3 gap-2">
-                    {(["XS","S","M","L","XL","XXL"] as const).map(sz => (
-                      <Input key={sz+"st2"} value={productForm[`${sz}_stock` as keyof ProductFormData] as string} onChange={(e) => updateProductField(`${sz}_stock` as keyof ProductFormData, e.target.value)} />
+                    {(["XS", "S", "M", "L", "XL", "XXL"] as const).map((sz) => (
+                      <Input
+                        key={sz}
+                        type="number"
+                        value={productForm[`${sz}_stock`] || "30"} // Default 30
+                        onChange={(e) =>
+                          updateProductField(`${sz}_stock`, e.target.value)
+                        }
+                      />
                     ))}
                   </div>
-
+        
                   <div className="flex gap-2 mt-4">
                     <Button onClick={handleSaveEditedProduct}>Save Changes</Button>
-                    <Button variant="outline" onClick={() => { setProductForm(defaultProductForm()); setProductIdInput(""); }}>Cancel</Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setProductForm(defaultProductForm());
+                        setProductIdInput("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
                   </div>
                 </div>
               </div>
             )}
           </>
         )}
+
 
         {tab === "delete" && (
           <>
@@ -900,7 +1099,7 @@ export default function Admin() {
                       <div>
                         <div className="font-medium">{p.name}</div>
                         <div className="text-xs text-muted-foreground">{p.collection}</div>
-                        <div className="text-xs text-muted-foreground">Category: {p.category ?? "Uncategorized"}</div>
+                        <div className="text-xs text-muted-foreground">Category: {p.category ?? "hp"}</div>
                       </div>
                     </div>
                     <div className="mt-3 text-sm">

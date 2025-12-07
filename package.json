@@ -12,17 +12,11 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "npm run build:client && npm run build:server",
+    "build": "npm run build:client",
     "build:client": "vite build",
-    "build:server": "vite build --config vite.config.server.ts",
-    "start": "node dist/server/node-build.mjs",
-    "test": "vitest --run",
-    "format.fix": "prettier --write .",
-    "typecheck": "tsc",
-    "preview": "vite preview",
-    "predeploy": "cd client && npm run build",
-    "deploy": "gh-pages -d dist/spa/"
+    "preview": "vite preview"
   },
+
   "dependencies": {
     "@supabase/supabase-js": "^2.86.0",
     "axios": "^1.12.2",

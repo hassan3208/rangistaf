@@ -558,13 +558,33 @@ export default function Admin() {
   /* -------------------------- RENDER UI -------------------------- */
 
   return (
-    <main className="container py-10 space-y-6">
+    <main className="w-full max-w-7xl mx-auto py-10 px-3 space-y-6">
       {/* HEADER + TAB NAV */}
       <div className="flex items-center justify-between gap-4">
-        <h1 className="font-serif text-3xl">Admin Panel — Pro</h1>
+        <h1 className="font-serif text-3xl">Admin Panel</h1>
 
         <div className="flex gap-2 items-center">
-          <nav className="flex gap-1 rounded-md bg-muted p-1">
+
+          {/* Mobile Dropdown */}
+          <div className="w-full md:hidden mb-3">
+            <select
+              className="w-full border rounded-lg p-2"
+              value={tab}
+              onChange={(e) => setTab(e.target.value as TabKey)}
+            >
+              <option value="orders">Orders</option>
+              <option value="users">Users & Carts</option>
+              <option value="add">Add Product</option>
+              <option value="edit">Edit Product</option>
+              <option value="delete">Delete Product</option>
+              <option value="products">Products</option>
+            </select>
+          </div>
+
+
+
+
+          <nav className="hidden md:flex gap-1 rounded-md bg-muted p-1">
             <TabButton active={tab === "orders"} onClick={() => openTab("orders")}>Orders</TabButton>
             <TabButton active={tab === "users"} onClick={() => openTab("users")}>Users & Carts</TabButton>
             <TabButton active={tab === "add"} onClick={() => { setAddProductOpen(true); openTab("add"); }}>Add Product</TabButton>
@@ -754,11 +774,7 @@ export default function Admin() {
                     <SelectValue placeholder="Select collection" />
                   </SelectTrigger>
                   <SelectContent>
-                    {COLLECTIONS.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
+                    {COLLECTIONS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
         
@@ -766,10 +782,10 @@ export default function Admin() {
                 <Input
                   value={productForm.category}
                   onChange={(e) => updateProductField("category", e.target.value)}
-                  placeholder="HP"
+                  placeholder="hp"
                 />
         
-                {/* COLORS SECTION - ONE BY ONE */}
+                {/* COLORS */}
                 <Label>Colors</Label>
                 <div className="space-y-2">
                   {productForm.colors.map((c, idx) => (
@@ -779,20 +795,13 @@ export default function Admin() {
                         onChange={(e) =>
                           updateProductField(
                             "colors",
-                            productForm.colors.map((x, i) => (i === idx ? e.target.value : x))
+                            productForm.colors.map((clr, i) => (i === idx ? e.target.value : clr))
                           )
                         }
                       />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          updateProductField(
-                            "colors",
-                            productForm.colors.filter((_, i) => i !== idx)
-                          )
-                        }
-                      >
+                      <Button variant="outline" size="sm" onClick={() =>
+                        updateProductField("colors", productForm.colors.filter((_, i) => i !== idx))
+                      }>
                         <X className="w-4 h-4" />
                       </Button>
                     </div>
@@ -800,29 +809,19 @@ export default function Admin() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() =>
-                      updateProductField("colors", [...productForm.colors, ""])
-                    }
+                    onClick={() => updateProductField("colors", [...productForm.colors, ""])}
                   >
                     <Plus className="w-3 h-3" /> Add Color
                   </Button>
                 </div>
         
                 <Label>Discount (%)</Label>
-                <Input
-                  type="number"
-                  value={productForm.discount}
-                  onChange={(e) => updateProductField("discount", e.target.value)}
-                />
+                <Input type="number" value={productForm.discount} onChange={(e) => updateProductField("discount", e.target.value)} />
               </div>
         
               <div className="space-y-2">
                 <Label>Description</Label>
-                <Textarea
-                  value={productForm.description}
-                  onChange={(e) => updateProductField("description", e.target.value)}
-                  rows={4}
-                />
+                <Textarea value={productForm.description} onChange={(e) => updateProductField("description", e.target.value)} rows={4} />
         
                 <Label>Additional Images</Label>
                 <div className="space-y-2">
@@ -839,51 +838,46 @@ export default function Admin() {
                   </Button>
                 </div>
         
+                {/* PRICE RANGE FIXED */}
                 <Label>Prices (PKR)</Label>
                 <div className="grid grid-cols-3 gap-2">
                   {(["XS", "S", "M", "L", "XL", "XXL"] as const).map((sz) => (
                     <Input
                       key={sz}
                       type="number"
+                      min={0}
+                      max={50000}
                       placeholder={`${sz} price`}
                       value={productForm[`${sz}_price`]}
-                      onChange={(e) =>
-                        updateProductField(`${sz}_price`, e.target.value)
-                      }
+                      onChange={(e) => updateProductField(`${sz}_price`, e.target.value)}
                     />
                   ))}
                 </div>
         
+                {/* STOCK RANGE FIXED */}
                 <Label>Stock (Qty)</Label>
                 <div className="grid grid-cols-3 gap-2">
                   {(["XS", "S", "M", "L", "XL", "XXL"] as const).map((sz) => (
                     <Input
-                      key={sz}
+                      key={sz + "_stock"}
                       type="number"
+                      min={-1}
+                      max={10000}
                       placeholder={`${sz} stock`}
-                      value={productForm[`${sz}_stock`] || "30"} // Default stock 30
-                      onChange={(e) =>
-                        updateProductField(`${sz}_stock`, e.target.value)
-                      }
+                      value={productForm[`${sz}_stock`] ?? "30"}
+                      onChange={(e) => updateProductField(`${sz}_stock`, e.target.value)}
                     />
                   ))}
                 </div>
         
                 <div className="flex items-center gap-2 mt-2">
-                  <Checkbox
-                    checked={productForm.kids}
-                    onCheckedChange={(v) => updateProductField("kids", !!v)}
-                  />
+                  <Checkbox checked={productForm.kids} onCheckedChange={(v) => updateProductField("kids", !!v)} />
                   <Label>Kids product</Label>
                 </div>
         
                 <div className="flex gap-2 mt-4">
-                  <Button onClick={handleAddProduct} disabled={loadingProduct}>
-                    {loadingProduct ? "Adding..." : "Add Product"}
-                  </Button>
-                  <Button variant="outline" onClick={() => setProductForm(defaultProductForm())}>
-                    Reset
-                  </Button>
+                  <Button onClick={handleAddProduct} disabled={loadingProduct}>{loadingProduct ? "Adding..." : "Add Product"}</Button>
+                  <Button variant="outline" onClick={() => setProductForm(defaultProductForm())}>Reset</Button>
                 </div>
               </div>
             </div>
@@ -891,29 +885,16 @@ export default function Admin() {
         )}
 
 
+
         {tab === "edit" && (
           <>
             <h2 className="font-serif text-2xl">Edit Product</h2>
-            <p className="text-sm text-muted-foreground">
-              Enter product ID to load and edit. All fields editable.
-            </p>
+            <p className="text-sm text-muted-foreground">Enter product ID to load and edit. All fields editable.</p>
         
             <div className="mt-4 flex gap-2">
-              <Input
-                value={productIdInput}
-                placeholder="Product ID"
-                onChange={(e) => setProductIdInput(e.target.value)}
-              />
-              <Button onClick={() => handleLoadProductForEdit(productIdInput)}>
-                Load
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setProductForm(defaultProductForm());
-                  setProductIdInput("");
-                }}
-              >
+              <Input value={productIdInput} placeholder="Product ID" onChange={(e) => setProductIdInput(e.target.value)} />
+              <Button onClick={() => handleLoadProductForEdit(productIdInput)}>Load</Button>
+              <Button variant="outline" onClick={() => { setProductForm(defaultProductForm()); setProductIdInput(""); }}>
                 Clear
               </Button>
             </div>
@@ -925,30 +906,18 @@ export default function Admin() {
                   <Input value={productForm.id} disabled />
         
                   <Label>Product Name</Label>
-                  <Input
-                    value={productForm.name}
-                    onChange={(e) => updateProductField("name", e.target.value)}
-                  />
+                  <Input value={productForm.name} onChange={(e) => updateProductField("name", e.target.value)} />
         
                   <Label>Primary Image</Label>
-                  <Input
-                    value={productForm.image}
-                    onChange={(e) => updateProductField("image", e.target.value)}
-                  />
+                  <Input value={productForm.image} onChange={(e) => updateProductField("image", e.target.value)} />
         
                   <Label>Collection</Label>
-                  <Input
-                    value={productForm.collection}
-                    onChange={(e) => updateProductField("collection", e.target.value)}
-                  />
+                  <Input value={productForm.collection} onChange={(e) => updateProductField("collection", e.target.value)} />
         
                   <Label>Category</Label>
-                  <Input
-                    value={productForm.category}
-                    onChange={(e) => updateProductField("category", e.target.value)}
-                  />
+                  <Input value={productForm.category} onChange={(e) => updateProductField("category", e.target.value)} />
         
-                  {/* COLORS SECTION - ONE BY ONE */}
+                  {/* COLORS */}
                   <Label>Colors</Label>
                   <div className="space-y-2">
                     {productForm.colors.map((c, idx) => (
@@ -958,33 +927,20 @@ export default function Admin() {
                           onChange={(e) =>
                             updateProductField(
                               "colors",
-                              productForm.colors.map((x, i) =>
-                                i === idx ? e.target.value : x
-                              )
+                              productForm.colors.map((clr, i) => (i === idx ? e.target.value : clr))
                             )
                           }
                         />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            updateProductField(
-                              "colors",
-                              productForm.colors.filter((_, i) => i !== idx)
-                            )
-                          }
-                        >
+                        <Button variant="outline" size="sm" onClick={() =>
+                          updateProductField("colors", productForm.colors.filter((_, i) => i !== idx))
+                        }>
                           <X className="w-4 h-4" />
                         </Button>
                       </div>
                     ))}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        updateProductField("colors", [...productForm.colors, ""])
-                      }
-                    >
+                    <Button variant="outline" size="sm" onClick={() =>
+                      updateProductField("colors", [...productForm.colors, ""])
+                    }>
                       <Plus className="w-3 h-3" /> Add Color
                     </Button>
                   </div>
@@ -992,32 +948,17 @@ export default function Admin() {
         
                 <div className="space-y-2">
                   <Label>Description</Label>
-                  <Textarea
-                    value={productForm.description}
-                    onChange={(e) => updateProductField("description", e.target.value)}
-                    rows={4}
-                  />
+                  <Textarea value={productForm.description} onChange={(e) => updateProductField("description", e.target.value)} rows={4} />
         
                   <Label>Discount (%)</Label>
-                  <Input
-                    type="number"
-                    value={productForm.discount}
-                    onChange={(e) => updateProductField("discount", e.target.value)}
-                  />
+                  <Input type="number" value={productForm.discount} onChange={(e) => updateProductField("discount", e.target.value)} />
         
                   <Label>Images</Label>
                   <div className="space-y-2">
                     {productForm.images.map((img, idx) => (
                       <div key={idx} className="flex gap-2 items-center">
-                        <Input
-                          value={img}
-                          onChange={(e) => updateImageAt(idx, e.target.value)}
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeImageAt(idx)}
-                        >
+                        <Input value={img} onChange={(e) => updateImageAt(idx, e.target.value)} />
+                        <Button variant="outline" size="sm" onClick={() => removeImageAt(idx)}>
                           <X className="w-4 h-4" />
                         </Button>
                       </div>
@@ -1027,43 +968,39 @@ export default function Admin() {
                     </Button>
                   </div>
         
+                  {/* PRICE WITH RANGE */}
                   <Label>Prices</Label>
                   <div className="grid grid-cols-3 gap-2">
                     {(["XS", "S", "M", "L", "XL", "XXL"] as const).map((sz) => (
                       <Input
                         key={sz}
                         type="number"
+                        min={0}
+                        max={50000}
                         value={productForm[`${sz}_price`]}
-                        onChange={(e) =>
-                          updateProductField(`${sz}_price`, e.target.value)
-                        }
+                        onChange={(e) => updateProductField(`${sz}_price`, e.target.value)}
                       />
                     ))}
                   </div>
         
+                  {/* STOCK WITH RANGE */}
                   <Label>Stocks</Label>
                   <div className="grid grid-cols-3 gap-2">
                     {(["XS", "S", "M", "L", "XL", "XXL"] as const).map((sz) => (
                       <Input
                         key={sz}
                         type="number"
-                        value={productForm[`${sz}_stock`] || "30"} // Default 30
-                        onChange={(e) =>
-                          updateProductField(`${sz}_stock`, e.target.value)
-                        }
+                        min={-1}
+                        max={10000}
+                        value={productForm[`${sz}_stock`] ?? "30"}
+                        onChange={(e) => updateProductField(`${sz}_stock`, e.target.value)}
                       />
                     ))}
                   </div>
         
                   <div className="flex gap-2 mt-4">
                     <Button onClick={handleSaveEditedProduct}>Save Changes</Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setProductForm(defaultProductForm());
-                        setProductIdInput("");
-                      }}
-                    >
+                    <Button variant="outline" onClick={() => { setProductForm(defaultProductForm()); setProductIdInput(""); }}>
                       Cancel
                     </Button>
                   </div>
@@ -1072,6 +1009,7 @@ export default function Admin() {
             )}
           </>
         )}
+
 
 
         {tab === "delete" && (

@@ -77,6 +77,7 @@ export default function Index() {
 
   useEffect(() => {
     const interval = setInterval(() => {
+      setDirection(1);
       setCurrentHeroIndex((prev) => (prev + 1) % heroImages.length);
     }, 5000);
     return () => clearInterval(interval);
@@ -89,6 +90,7 @@ export default function Index() {
   });
 
   const [params] = useSearchParams();
+  const [direction, setDirection] = useState(1);
   const q = (params.get("q") ?? "").toLowerCase();
 
   const products = getProducts();
@@ -207,13 +209,21 @@ export default function Index() {
 
         <div className="banner-image">
           {heroImages.map((src, index) => (
-            <img
+            <motion.img
               key={index}
               decoding="async"
               src={src}
               alt="slider"
-              className={index === currentHeroIndex ? "active" : "hidden"}
+              className="absolute top-0 left-0 w-full h-full object-cover"
+              initial={{ x: direction === 1 ? 200 : -200, opacity: 0 }}
+              animate={{
+                x: index === currentHeroIndex ? 0 : direction === 1 ? -200 : 200,
+                opacity: index === currentHeroIndex ? 1 : 0
+              }}
+              transition={{ duration: 1.4, ease: "easeOut" }}
             />
+
+
           ))}
         </div>  
       </motion.section>

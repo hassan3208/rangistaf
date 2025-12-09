@@ -154,6 +154,7 @@ const Root = () => {
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/about" element={<About />} />
+                <Route path="/auth/callback" element={<AuthCallback />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/product/:id" element={<ProductDetail />} />
                 <Route path="/admin" element={

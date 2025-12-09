@@ -614,20 +614,73 @@ export default function Admin() {
                         <span className="font-medium">Order #{o.order_id} · User {o.username}</span>
                         <span className="text-xs text-muted-foreground">{new Date(o.order_time).toLocaleString()}</span>
                         {(() => {
-                          const computedTotal = o.products.reduce((s, item) => {
+                          let computedTotal = o.products.reduce((s, item) => {
                             const qty = item.quantity || 1;
-                            const prod = productsById[item.product_id] || getProducts().find(p => p.name.toLowerCase() === String(item.product_name).toLowerCase());
-                            const pct = prod ? getDiscountForCollection(prod.collection) : 0;
-                            const unit = qty > 0 ? Number(item.price) / qty : Number(item.price);
-                            const discountedUnit = applyDiscount(unit, pct);
-                            const line = Math.round(discountedUnit * qty);
-                            return s + line;
+                            const originalLine = Number(item.price);
+                            const pct = Number(item.discount || 0);
+                          
+                            const discountedLine =
+                              pct > 0 ? Math.round(originalLine - (originalLine * pct) / 100) : originalLine;
+                          
+                            return s + discountedLine;
                           }, 0);
+                          
+                          // APPLY DELIVERY CHARGES
+                          const totalItems = o.products.reduce((sum, p) => sum + p.quantity, 0);
+                          const deliveryCharges = computedTotal < 5000 || totalItems < 3 ? 200 : 0;
+                          const finalTotal = computedTotal;   // products only, no delivery
 
-                          if (o.status === "pending") return <span className="text-xs text-muted-foreground">Total: {formatPKR(computedTotal)}</span>;
-                          if (o.status === "canceled") return <span className="text-xs text-muted-foreground">Canceled (Original Total: {formatPKR(o.total_price)})</span>;
-                          if (o.status === "delivered") return <span className="text-xs text-muted-foreground">Paid: {formatPKR(computedTotal)}</span>;
-                          return <span className="text-xs text-muted-foreground">Paid: {formatPKR(Math.round(computedTotal * 0.5))} | Remaining: {formatPKR(Math.round(computedTotal * 0.5))}</span>;
+
+                          // pending: user must pay 25% now, 75% later
+                          if (o.status === "pending") {
+                            return (
+                              <><span className="text-xs text-muted-foreground">
+                                Will Pay: {formatPKR(Math.round(finalTotal * 0.25))} |
+                                Remaining: {formatPKR(Math.round(finalTotal * 0.75))}
+                              </span><span>Delivery: {deliveryCharges > 0 ? "Rs 200" : "Free"}</span></>
+                            );
+                          }
+                          
+                          // canceled stays the same
+                          if (o.status === "canceled") {
+                            return (
+                              <span className="text-xs text-muted-foreground">
+                                Canceled (Original Total: {formatPKR(o.total_price)})
+                              </span>
+                            );
+                          }
+                          
+                          // delivered → 100% paid
+                          if (o.status === "delivered") {
+                            return (
+                              <><span className="text-xs text-muted-foreground">
+                                Paid: {formatPKR(computedTotal)}
+                              </span><span>Delivery: {deliveryCharges > 0 ? "Rs 200" : "Free"}</span></>
+                            );
+                          }
+                          
+                          // processing + shipped → 25% paid, 75% remaining
+                          if (o.status === "processing" || o.status === "shipped") {
+                            return (
+                              <><span className="text-xs text-muted-foreground">
+                                Paid: {formatPKR(Math.round(finalTotal * 0.25))} |
+                                Remaining: {formatPKR(Math.round(finalTotal * 0.75))}
+                              </span><span>Delivery: {deliveryCharges > 0 ? "Rs 200" : "Free"}</span></>
+                            );
+                          }
+
+                          return (
+                            <div className="flex flex-col text-xs text-muted-foreground">
+                              <span>
+                                Paid: {formatPKR(Math.round(finalTotal * 0.25))} |
+                                Remaining: {formatPKR(Math.round(finalTotal * 0.75))}
+                              </span>
+                          
+                              {/* DELIVERY CHARGES HERE */}
+                              <span>Delivery: {deliveryCharges > 0 ? "Rs 200" : "Free"}</span>
+                            </div>
+                          );
+
                         })()}
                       </div>
                       <div className="flex items-center gap-2">
@@ -655,13 +708,14 @@ export default function Admin() {
                         const qty = i.quantity || 1;
                     
                         // --- DISCOUNT LOGIC (Frontend Calculation) ---
-                        const originalUnit = qty > 0 ? Number(i.price) / qty : Number(i.price);
-                        const pct = Number(i.discount || 0);      // <-- backend discount
-                        const discountedUnit = pct > 0 
-                          ? Math.round(originalUnit - (originalUnit * pct) / 100)
-                          : originalUnit;
-                    
-                        const linePrice = discountedUnit * qty;
+                        const originalLine = Number(i.price);  
+                        const pct = Number(i.discount || 0);
+                        
+                        const discountedLine =
+                          pct > 0 ? Math.round(originalLine - (originalLine * pct) / 100) : originalLine;
+                        
+                        const linePrice = discountedLine;
+
                     
                         return (
                           <li

@@ -7,9 +7,13 @@ export default function AuthCallback() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    refreshUser();
-    navigate("/");
+    async function run() {
+      await refreshUser(); // Wait for Supabase to extract tokens from URL
+      navigate("/", { replace: true });
+    }
+    run();
   }, []);
+
 
   return <p>Logging you in...</p>;
 }
